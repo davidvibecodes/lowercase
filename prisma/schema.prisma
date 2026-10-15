@@ -1,5 +1,8 @@
+// lowercase data model. Status-like fields are strings typed by unions in src/lib/types.ts (KTD3).
+
 generator client {
   provider   = "prisma-client-js"
+  // The Node-API engine has no Windows ARM64 build; the binary engine runs everywhere.
   engineType = "binary"
 }
 
@@ -8,6 +11,306 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Ping {
-  id Int @id @default(autoincrement())
+model User {
+  id            String   @id @default(cuid())
+  username      String   @unique
+  firstName     String
+  lastName      String
+  email         String   @unique
+  isAdmin       Boolean  @default(false)
+  isLeagueBot   Boolean  @default(false)
+  xp            Int      @default(0)
+  gateMode      String   @default("auto")
+  leagueName    String   @default("Lithium")
+  soundOn       Boolean  @default(true)
+  reducedMotion Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  friendships     Friendship[]       @relation("UserFriendships")
+  friendOf        Friendship[]       @relation("FriendOfUser")
+  groupsOwned     StudyGroup[]
+  memberships     GroupMember[]
+  mastery         QuestionMastery[]
+  answers         AnswerEvent[]
+  lessons         LessonCompletion[]
+  activity        DailyActivity[]
+  invitesSent     SessionInvite[]    @relation("InviteFrom")
+  invitesReceived SessionInvite[]    @relation("InviteTo")
+  notes           SessionNote[]
+}
+
+model Friendship {
+  id        String   @id @default(cuid())
+  userId    String
+  friendId  String
+  createdAt DateTime @default(now())
+  user      User     @relation("UserFriendships", fields: [userId], references: [id], onDelete: Cascade)
+  friend    User     @relation("FriendOfUser", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+}
+
+model StudyGroup {
+  id        String        @id @default(cuid())
+  name      String
+  ownerId   String
+  createdAt DateTime      @default(now())
+  owner     User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  members   GroupMember[]
+}
+
+model GroupMember {
+  groupId  String
+  userId   String
+  joinedAt DateTime   @default(now())
+  group    StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user     User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([groupId, userId])
+}
+
+model Concept {
+  id         String             @id @default(cuid())
+  slug       String             @unique
+  title      String
+  summary    String
+  icon       String             @default("sparkles")
+  order      Int
+  published  Boolean            @default(true)
+  createdAt  DateTime           @default(now())
+  explainers ExplainerCard[]
+  questions  Question[]
+  lessons    LessonCompletion[]
+}
+
+model ExplainerCard {
+  id        String  @id @default(cuid())
+  conceptId String
+  order     Int
+  title     String
+  body      String
+  concept   Concept @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+}
+
+model Question {
+  id          String            @id @default(cuid())
+  conceptId   String
+  kind        String            @default("concept")
+  prompt      String
+  scenario    String?
+  explanation String
+  order       Int               @default(0)
+  concept     Concept           @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+  options     Option[]
+  mastery     QuestionMastery[]
+  answers     AnswerEvent[]
+}
+
+model Option {
+  id         String   @id @default(cuid())
+  questionId String
+  text       String
+  isCorrect  Boolean  @default(false)
+  order      Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+model QuestionMastery {
+  userId     String
+  questionId String
+  masteredAt DateTime @default(now())
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, questionId])
+}
+
+model AnswerEvent {
+  id                  String   @id @default(cuid())
+  userId              String
+  questionId          String
+  conceptId           String
+  firstAttemptCorrect Boolean
+  createdAt           DateTime @default(now())
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question            Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([userId, conceptId, createdAt])
+}
+
+model LessonCompletion {
+  id              String   @id @default(cuid())
+  userId          String
+  conceptId       String
+  questions       Int
+  firstTryCorrect Int
+  xp              Int
+  createdAt       DateTime @default(now())
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  concept         Concept  @relation(fields: [conceptId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+}
+
+model DailyActivity {
+  userId     String
+  day        String // YYYY-MM-DD, server-local calendar day (KTD11)
+  activities Int    @default(0)
+  xp         Int    @default(0)
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, day])
+}
+
+model Case {
+  id               String           @id @default(cuid())
+  title            String
+  caseType         String
+  difficulty       Int
+  problemStatement String
+  published        Boolean          @default(true)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  items            CaseItem[]
+  transcript       TranscriptTurn[]
+  nodes            IssueTreeNode[]
+  sessions         CaseSession[]
+  results          CaseResult[]
+}
+
+model CaseItem {
+  id         String           @id @default(cuid())
+  caseId     String
+  kind       String // fact | hint | recommendation | observation
+  order      Int
+  text       String
+  archivedAt DateTime?
+  case       Case             @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  reveals    SessionReveal[]
+  hintUses   SessionHintUse[]
+}
+
+model TranscriptTurn {
+  id      String @id @default(cuid())
+  caseId  String
+  order   Int
+  speaker String // interviewer | candidate
+  text    String
+  case    Case   @relation(fields: [caseId], references: [id], onDelete: Cascade)
+}
+
+model IssueTreeNode {
+  id            String          @id @default(cuid())
+  caseId        String
+  parentId      String?
+  label         String
+  isCorrectPath Boolean         @default(false)
+  order         Int             @default(0)
+  case          Case            @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  parent        IssueTreeNode?  @relation("TreeChildren", fields: [parentId], references: [id], onDelete: Cascade)
+  children      IssueTreeNode[] @relation("TreeChildren")
+}
+
+model CaseSession {
+  id            String           @id @default(cuid())
+  hostId        String
+  guestId       String?
+  status        String           @default("LOBBY")
+  round         Int              @default(1)
+  caseType      String?
+  difficulty    Int?
+  caseId        String?
+  interviewerId String?
+  intervieweeId String?
+  hostReady     Boolean          @default(false)
+  guestReady    Boolean          @default(false)
+  createdAt     DateTime         @default(now())
+  startedAt     DateTime?
+  solvedAt      DateTime?
+  closedAt      DateTime?
+  closedById    String?
+  case          Case?            @relation(fields: [caseId], references: [id], onDelete: SetNull)
+  invites       SessionInvite[]
+  reveals       SessionReveal[]
+  hintUses      SessionHintUse[]
+  notes         SessionNote[]
+  scores        RubricScore[]
+  results       CaseResult[]
+}
+
+model SessionInvite {
+  id        String      @id @default(cuid())
+  sessionId String
+  fromId    String
+  toId      String
+  status    String      @default("PENDING")
+  createdAt DateTime    @default(now())
+  session   CaseSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  from      User        @relation("InviteFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to        User        @relation("InviteTo", fields: [toId], references: [id], onDelete: Cascade)
+}
+
+model SessionReveal {
+  id         String      @id @default(cuid())
+  sessionId  String
+  round      Int
+  caseItemId String
+  revealedAt DateTime    @default(now())
+  session    CaseSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  item       CaseItem    @relation(fields: [caseItemId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, round, caseItemId])
+}
+
+model SessionHintUse {
+  id         String      @id @default(cuid())
+  sessionId  String
+  round      Int
+  caseItemId String
+  usedAt     DateTime    @default(now())
+  session    CaseSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  item       CaseItem    @relation(fields: [caseItemId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, round, caseItemId])
+}
+
+model SessionNote {
+  sessionId String
+  round     Int
+  userId    String
+  content   String      @default("")
+  updatedAt DateTime    @updatedAt
+  session   CaseSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([sessionId, round, userId])
+}
+
+model RubricScore {
+  id        String      @id @default(cuid())
+  sessionId String
+  round     Int
+  criterion String
+  score     Int
+  notes     String      @default("")
+  session   CaseSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, round, criterion])
+}
+
+model CaseResult {
+  id            String       @id @default(cuid())
+  sessionId     String?
+  round         Int          @default(1)
+  caseId        String?
+  caseType      String
+  difficulty    Int
+  intervieweeId String
+  interviewerId String?
+  avgScore      Float
+  solvedAt      DateTime     @default(now())
+  session       CaseSession? @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+  case          Case?        @relation(fields: [caseId], references: [id], onDelete: SetNull)
+
+  @@index([intervieweeId, caseType, difficulty])
 }

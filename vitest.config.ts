@@ -13,5 +13,6 @@ export default defineConfig({
     testTimeout: 30_000,
     hookTimeout: 60_000,
     globalSetup: ["tests/unit/global-setup.ts"],
+    env: { DATABASE_URL: "file:./test.db", AUTH_SECRET: "unit-test-secret", AUTH_MODE: "dev" },
   },
 });
