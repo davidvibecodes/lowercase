@@ -75,6 +75,7 @@ export function registerSessionHandlers(io: IO, socket: IOSocket) {
     try {
       const s = await db.caseSession.findUnique({ where: { id: sessionId } });
       if (!s || !sessions.isParticipant(s, socket.data.userId)) throw new Error("This session is private");
+      if (s.status === "CLOSED") throw new Error("This session has ended");
       await socket.join(sessionRoom(sessionId));
       const view = await sessions.buildView(db, sessionId, socket.data.userId, await connectedIn(io, sessionId));
       ack({ ok: true, view });
@@ -114,9 +115,11 @@ export function registerSessionHandlers(io: IO, socket: IOSocket) {
 
   socket.on("session:close", async ({ sessionId }, ack) => {
     try {
-      const closed = await sessions.closeSession(db, sessionId, socket.data.userId);
+      const { closed, cancelled } = await sessions.closeSession(db, sessionId, socket.data.userId);
       ack({ ok: true });
-      if (closed) io.to(sessionRoom(sessionId)).emit("session:closed", { sessionId, by: await person(db, socket.data.userId) });
+      const by = await person(db, socket.data.userId);
+      if (closed) io.to(sessionRoom(sessionId)).emit("session:closed", { sessionId, by });
+      for (const c of cancelled) io.to(userRoom(c.toId)).emit("invite:closed", { inviteId: c.id, status: "CANCELLED", by });
       io.in(sessionRoom(sessionId)).socketsLeave(sessionRoom(sessionId));
     } catch (err) {
       ack({ ok: false, error: errorMessage(err) });

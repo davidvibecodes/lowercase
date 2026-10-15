@@ -47,8 +47,24 @@ describe("settings", () => {
     const [david, roy] = [await userId("davidsathyandevice"), await userId("roy")];
     const s = await db.caseSession.create({ data: { hostId: david, guestId: roy } });
     await db.sessionNote.create({ data: { sessionId: s.id, round: 1, userId: roy, content: "roy's secret" } });
+    await db.sessionNote.create({ data: { sessionId: s.id, round: 2, userId: david, content: "david's own notes" } });
     const out = await exportUserData(db, david);
     expect(out.profile.username).toBe("davidsathyandevice");
+    expect(out.notepads.map((n) => n.content)).toEqual(["david's own notes"]);
     expect(JSON.stringify(out)).not.toContain("roy's secret");
+  });
+
+  it("resetting my progress keeps my partner's results and unlocks", async () => {
+    const [david, roy] = [await userId("davidsathyandevice"), await userId("roy")];
+    await db.caseResult.createMany({
+      data: [
+        { caseType: "Profitability", difficulty: 1, intervieweeId: roy, interviewerId: david, avgScore: 4.5 },
+        { caseType: "Pricing", difficulty: 1, intervieweeId: david, interviewerId: roy, avgScore: 4 },
+      ],
+    });
+    await resetProgress(db, david);
+    const left = await db.caseResult.findMany();
+    expect(left).toHaveLength(1);
+    expect(left[0]).toMatchObject({ intervieweeId: roy, interviewerId: null, avgScore: 4.5 });
   });
 });

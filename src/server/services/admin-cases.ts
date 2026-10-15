@@ -53,6 +53,8 @@ export async function saveCaseItems(db: Db, caseId: string, kind: string, input:
         : db.caseItem.create({ data: { caseId, kind, text: item.text, order } }),
     ),
   ]);
+  // The saved list with real ids, so the editor's next save updates rather than re-creates.
+  return db.caseItem.findMany({ where: { caseId, kind, archivedAt: null }, orderBy: { order: "asc" }, select: { id: true, text: true } });
 }
 
 export async function saveTranscript(db: Db, caseId: string, input: unknown) {
@@ -76,6 +78,9 @@ export async function saveTree(db: Db, caseId: string, input: unknown) {
 }
 
 export async function deleteCase(db: Db, id: string) {
+  // A live session would be left with no case to render; unpublish instead.
+  const live = await db.caseSession.count({ where: { caseId: id, status: { in: ["LOBBY", "ACTIVE", "SOLVED"] } } });
+  if (live) throw new ServiceError("This case is in use by an open session. Unpublish it instead, or delete it once the session ends.");
   await db.case.delete({ where: { id } });
 }
 

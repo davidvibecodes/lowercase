@@ -14,6 +14,7 @@ export function registerInviteHandlers(io: IO, socket: IOSocket) {
   socket.on("invite:send", async (p, ack) => {
     try {
       const invite = await sendInvite(db, me, p, isOnline);
+      for (const r of invite.replaced) io.to(userRoom(r.toId)).emit("invite:closed", { inviteId: r.id, status: "CANCELLED", by: invite.from });
       io.to(userRoom(invite.toId)).emit("invite:received", {
         inviteId: invite.id,
         sessionId: invite.sessionId,

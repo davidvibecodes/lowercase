@@ -119,7 +119,11 @@ export async function setReady(db: Db, sessionId: string, userId: string, ready:
   const next = await db.caseSession.update({ where: { id: s.id }, data: flags });
   if (next.hostReady && next.guestReady) {
     // Conditional update so two simultaneous "ready" events start the case once.
-    await db.caseSession.updateMany({ where: { id: s.id, status: "LOBBY" }, data: { status: "ACTIVE", startedAt: new Date(), ...resetReady } });
+    // Conditional on the full launch precondition, so a concurrent case or role change can't start an unagreed case.
+    await db.caseSession.updateMany({
+      where: { id: s.id, status: "LOBBY", hostReady: true, guestReady: true, caseId: { not: null }, interviewerId: { not: null }, intervieweeId: { not: null } },
+      data: { status: "ACTIVE", startedAt: new Date(), ...resetReady },
+    });
   }
 }
 
@@ -213,8 +217,12 @@ export async function closeSession(db: Db, sessionId: string, userId: string) {
   const s = await load(db, sessionId);
   assertParticipant(s, userId);
   const moved = await db.caseSession.updateMany({ where: { id: s.id, status: { in: OPEN } }, data: { status: "CLOSED", closedAt: new Date(), closedById: userId } });
-  if (moved.count) await db.sessionInvite.updateMany({ where: { sessionId: s.id, status: "PENDING" }, data: { status: "CANCELLED" } });
-  return moved.count > 0;
+  let cancelled: Array<{ id: string; toId: string }> = [];
+  if (moved.count) {
+    cancelled = await db.sessionInvite.findMany({ where: { sessionId: s.id, status: "PENDING" }, select: { id: true, toId: true } });
+    await db.sessionInvite.updateMany({ where: { id: { in: cancelled.map((c) => c.id) } }, data: { status: "CANCELLED" } });
+  }
+  return { closed: moved.count > 0, cancelled };
 }
 
 export async function openSessionsFor(db: Db, userId: string) {

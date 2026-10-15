@@ -113,8 +113,8 @@ export async function createCase(tx: Tx, seed: CaseSeed) {
   return created;
 }
 
-/** Full seed into an empty database. */
-export async function seedDatabase(db: Db, now = new Date()) {
+/** Full seed into an empty database. Callers run it inside a transaction so a failure leaves nothing behind. */
+export async function seedDatabase(db: Tx, now = new Date()) {
   const owner = await createUser(db, ownerSeed, now);
   const friends = [];
   for (const f of friendSeeds) friends.push(await createUser(db, f, now));
@@ -159,7 +159,9 @@ export async function resetUserProgress(db: Db, userId: string, now = new Date()
     await tx.answerEvent.deleteMany({ where: { userId } });
     await tx.lessonCompletion.deleteMany({ where: { userId } });
     await tx.dailyActivity.deleteMany({ where: { userId } });
-    await tx.caseResult.deleteMany({ where: { OR: [{ intervieweeId: userId }, { interviewerId: userId }] } });
+    // My own results go; results I interviewed belong to my partner, so only detach me.
+    await tx.caseResult.deleteMany({ where: { intervieweeId: userId } });
+    await tx.caseResult.updateMany({ where: { interviewerId: userId }, data: { interviewerId: null } });
     await tx.user.update({ where: { id: userId }, data: { xp: seed ? totalXp(seed) : 0, gateMode: "auto" } });
     if (seed) await writeActivity(tx, userId, seed, now);
   });

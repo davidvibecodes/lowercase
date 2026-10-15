@@ -2,7 +2,7 @@
 
 import { AnimatePresence, m } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Swords, X } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Modal } from "@/components/ui/Modal";
@@ -17,6 +17,8 @@ export function InviteListener() {
   const router = useRouter();
   const [invites, setInvites] = useState<InvitePayload[]>([]);
   const [confirmJoin, setConfirmJoin] = useState<InvitePayload | null>(null);
+  const [readyWhileLearning, setReadyWhileLearning] = useState<string | null>(null);
+  const accepting = useRef(false);
   const lessonInProgress = useActivity((s) => s.lessonInProgress);
   const activeSessionId = useActivity((s) => s.activeSessionId);
 
@@ -29,6 +31,12 @@ export function InviteListener() {
       if (p.status === "CANCELLED" && p.by) toast(`${p.by.firstName} cancelled the invite`);
     };
     const onReady = ({ sessionId }: { sessionId: string }) => {
+      // The sender may be mid-lesson when a friend accepts: ask before leaving it.
+      if (useActivity.getState().lessonInProgress && !accepting.current) {
+        setReadyWhileLearning(sessionId);
+        return;
+      }
+      accepting.current = false;
       useActivity.getState().setLessonInProgress(false);
       router.push(`/session/${sessionId}`);
     };
@@ -43,8 +51,11 @@ export function InviteListener() {
   }, [router]);
 
   const accept = async (inv: InvitePayload) => {
+    if (accepting.current) return;
+    accepting.current = true;
     setConfirmJoin(null);
     const res = await emitAck("invite:accept", { inviteId: inv.inviteId });
+    if (!res.ok) accepting.current = false;
     setInvites((list) => list.filter((i) => i.inviteId !== inv.inviteId));
     if (!res.ok) toast(res.error, "warning");
     // Navigation follows the session:ready event.
@@ -116,6 +127,27 @@ export function InviteListener() {
           </Button>
           <Button variant="warning" className="flex-1" onClick={() => confirmJoin && accept(confirmJoin)}>
             Leave and join
+          </Button>
+        </div>
+      </Modal>
+
+      <Modal open={Boolean(readyWhileLearning)} onClose={() => setReadyWhileLearning(null)} title="Your friend joined">
+        <p className="text-muted">They&apos;re waiting in the session lobby. Going there ends this lesson, and you will lose its progress and XP.</p>
+        <div className="mt-6 flex gap-3">
+          <Button variant="secondary" className="flex-1" onClick={() => setReadyWhileLearning(null)} data-autofocus>
+            Keep learning
+          </Button>
+          <Button
+            variant="warning"
+            className="flex-1"
+            onClick={() => {
+              const id = readyWhileLearning;
+              setReadyWhileLearning(null);
+              useActivity.getState().setLessonInProgress(false);
+              if (id) router.push(`/session/${id}`);
+            }}
+          >
+            Go to lobby
           </Button>
         </div>
       </Modal>

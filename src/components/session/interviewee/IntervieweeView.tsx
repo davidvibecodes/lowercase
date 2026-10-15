@@ -84,13 +84,16 @@ function Notepad({ sessionId, round, initial, readOnly }: { sessionId: string; r
     };
   }, [sessionId, round]);
 
+  const seq = useRef(0);
   const onChange = (v: string) => {
     setText(v);
     setState("saving");
     if (timer.current) window.clearTimeout(timer.current);
+    const n = ++seq.current;
     timer.current = window.setTimeout(async () => {
       const r = await emitAck("session:notepad", { sessionId, content: v });
-      setState(r.ok ? "saved" : "error");
+      // An older save's ack must not mark a newer pending edit as saved.
+      if (n === seq.current) setState(r.ok ? "saved" : "error");
     }, 600);
   };
 

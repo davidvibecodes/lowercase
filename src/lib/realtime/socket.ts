@@ -20,14 +20,21 @@ export function getSocket(): ClientSocket {
   return socket;
 }
 
-/** Emits with an acknowledgement and resolves its payload. */
+const ACK_TIMEOUT_MS = 8000;
+
+/**
+ * Emits with an acknowledgement and resolves its payload. A lost connection
+ * resolves as a failure after a timeout, so callers' busy states always clear.
+ */
 export function emitAck<E extends keyof ClientToServerEvents>(
   event: E,
   payload: Parameters<ClientToServerEvents[E]>[0],
 ): Promise<Parameters<Parameters<ClientToServerEvents[E]>[1]>[0]> {
   return new Promise((resolve) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (getSocket().emit as any)(event, payload, resolve);
+    (getSocket().timeout(ACK_TIMEOUT_MS).emit as any)(event, payload, (err: unknown, res: any) =>
+      resolve(err ? { ok: false, error: "Connection lost. Try again." } : res),
+    );
   });
 }
 

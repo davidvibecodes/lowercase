@@ -106,7 +106,9 @@ function MetaCard({ meta }: { meta: Meta }) {
             onClick={() =>
               start(async () => {
                 const r = await deleteCaseAction(m.id);
+                setConfirmDelete(false);
                 if (r.ok) router.push("/admin/cases");
+                else toast(r.error, "warning");
               })
             }
           >
@@ -127,6 +129,7 @@ function ListsCard({ caseId, initial }: { caseId: string; initial: Lists }) {
       for (const kind of Object.keys(lists) as Array<keyof Lists>) {
         const r = await saveCaseItemsAction(caseId, kind, lists[kind].map((i) => ({ id: i.id, text: i.text })));
         if (!r.ok) return toast(`${LIST_LABELS[kind]}: ${r.error}`, "warning");
+        setLists((l) => ({ ...l, [kind]: r.items }));
       }
       toast("Lists saved", "success");
       router.refresh();

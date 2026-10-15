@@ -138,4 +138,60 @@ describe("invites", () => {
       delete process.env.INVITE_TTL_MS;
     }
   });
+
+  it("refuses to accept an expired invite, or someone else's", async () => {
+    process.env.INVITE_TTL_MS = "150";
+    try {
+      const a = await connectAs(h, david);
+      const b = await connectAs(h, roy);
+      const sent = await call(a, "invite:send", { toUserId: roy });
+      await nextEvent(b, "invite:closed");
+      expect(await call(b, "invite:accept", { inviteId: sent.inviteId })).toEqual({ ok: false, error: "This invite is no longer open" });
+    } finally {
+      delete process.env.INVITE_TTL_MS;
+    }
+    const a = await connectAs(h, david);
+    await connectAs(h, roy);
+    const m = await connectAs(h, mihaela);
+    const sent = await call(a, "invite:send", { toUserId: roy });
+    expect(await call(m, "invite:accept", { inviteId: sent.inviteId })).toEqual({ ok: false, error: "Invite not found" });
+  });
+
+  it("cancel tells the recipient", async () => {
+    const a = await connectAs(h, david);
+    const b = await connectAs(h, roy);
+    const sent = await call(a, "invite:send", { toUserId: roy });
+    const closed = nextEvent(b, "invite:closed");
+    await call(a, "invite:cancel", { inviteId: sent.inviteId });
+    expect(await closed).toMatchObject({ inviteId: sent.inviteId, status: "CANCELLED" });
+  });
+
+  it("a new invite from the same lobby replaces the old one and tells its recipient", async () => {
+    const lobby = await db.caseSession.create({ data: { hostId: david } });
+    const a = await connectAs(h, david);
+    const b = await connectAs(h, roy);
+    await connectAs(h, mihaela);
+    const first = await call(a, "invite:send", { toUserId: roy, sessionId: lobby.id });
+    const closed = nextEvent(b, "invite:closed");
+    await call(a, "invite:send", { toUserId: mihaela, sessionId: lobby.id });
+    expect(await closed).toMatchObject({ inviteId: first.inviteId, status: "CANCELLED" });
+    expect((await db.sessionInvite.findUniqueOrThrow({ where: { id: first.inviteId } })).status).toBe("CANCELLED");
+  });
+
+  it("closing a lobby tells the pending invite's recipient", async () => {
+    const lobby = await db.caseSession.create({ data: { hostId: david } });
+    const a = await connectAs(h, david);
+    const b = await connectAs(h, roy);
+    const sent = await call(a, "invite:send", { toUserId: roy, sessionId: lobby.id });
+    const closed = nextEvent(b, "invite:closed");
+    await call(a, "session:close", { sessionId: lobby.id });
+    expect(await closed).toMatchObject({ inviteId: sent.inviteId, status: "CANCELLED" });
+  });
+
+  it("won't invite into a lobby that already has a partner", async () => {
+    const lobby = await db.caseSession.create({ data: { hostId: david, guestId: roy } });
+    const a = await connectAs(h, david);
+    await connectAs(h, mihaela);
+    expect(await call(a, "invite:send", { toUserId: mihaela, sessionId: lobby.id })).toEqual({ ok: false, error: "That lobby can't take an invite" });
+  });
 });

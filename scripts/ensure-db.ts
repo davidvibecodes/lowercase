@@ -53,7 +53,8 @@ const db = new PrismaClient();
 try {
   await db.$queryRawUnsafe("PRAGMA journal_mode=WAL;");
   if ((await db.user.count()) === 0) {
-    await seedDatabase(db);
+    // All-or-nothing: a half-seeded database would never be reseeded (the check above is on users).
+    await db.$transaction((tx) => seedDatabase(tx), { timeout: 120_000, maxWait: 10_000 });
     console.log("[ensure-db] seeded database");
   }
 } finally {

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { requireAdmin } from "@/lib/auth/guards";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { getCaseAdmin } from "@/server/services/admin-cases";
@@ -7,6 +8,8 @@ import { CaseEditor } from "@/components/admin/CaseEditor";
 export const metadata: Metadata = { title: "Edit case · Admin" };
 
 export default async function EditCase({ params }: { params: Promise<{ id: string }> }) {
+  // Authorize at the page too: a crafted RSC request can render a page without its layout.
+  await requireAdmin();
   const { id } = await params;
   const c = await getCaseAdmin(db, id);
   if (!c) notFound();

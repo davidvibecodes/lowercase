@@ -65,12 +65,29 @@ describe("lobby", () => {
   it("assigns the complementary role to the partner and lets either flip it (R16)", async () => {
     const x = await lobby();
     await call(x.a, "session:pickRole", { sessionId: x.id, role: "interviewer" });
-    await sleep(60);
-    expect(x.vb.view!.me.role).toBe("interviewee");
-    expect(x.va.view!.me.role).toBe("interviewer");
+    await until(x.vb, (v) => v.me.role === "interviewee");
+    await until(x.va, (v) => v.me.role === "interviewer");
     await call(x.b, "session:pickRole", { sessionId: x.id, role: "interviewer" });
-    await sleep(60);
-    expect(x.va.view!.me.role).toBe("interviewee");
+    await until(x.va, (v) => v.me.role === "interviewee");
+  });
+
+  it("refuses a locked level on the server, by id and at random", async () => {
+    const x = await lobby("Profitability", 2);
+    await call(x.a, "session:pickRole", { sessionId: x.id, role: "interviewer" });
+    const l2 = await db.case.findFirstOrThrow({ where: { caseType: "Profitability", difficulty: 2 } });
+    expect(await call(x.a, "session:selectCase", { sessionId: x.id, caseId: l2.id })).toEqual({ ok: false, error: "That level is locked for the interviewee" });
+    expect((await call(x.a, "session:selectCase", { sessionId: x.id, caseId: "random" })).ok).toBe(false);
+    expect((await db.caseSession.findUniqueOrThrow({ where: { id: x.id } })).caseId).toBeNull();
+  });
+
+  it("clears a selected case the new interviewee can't play when roles flip", async () => {
+    // Roy has an L1 result (L2 unlocked); David doesn't.
+    await db.caseResult.create({ data: { caseType: "Profitability", difficulty: 1, intervieweeId: roy, avgScore: 4.5 } });
+    const x = await lobby("Profitability", 2);
+    await call(x.a, "session:pickRole", { sessionId: x.id, role: "interviewer" });
+    expect((await call(x.a, "session:selectCase", { sessionId: x.id, caseId: "random" })).ok).toBe(true);
+    await call(x.a, "session:pickRole", { sessionId: x.id, role: "interviewee" });
+    expect((await db.caseSession.findUniqueOrThrow({ where: { id: x.id } })).caseId).toBeNull();
   });
 
   it("won't launch without a case", async () => {
@@ -84,9 +101,9 @@ describe("lobby", () => {
   it("hides Level 2 from the pool when the interviewee hasn't unlocked it", async () => {
     const x = await lobby("Profitability", 2);
     await call(x.a, "session:pickRole", { sessionId: x.id, role: "interviewer" });
-    await sleep(60);
-    expect(x.va.view!.poolLocked).toBe(true);
-    expect(x.va.view!.casePool).toEqual([]);
+    const v = await until(x.va, (view) => view.me.role === "interviewer");
+    expect(v.poolLocked).toBe(true);
+    expect(v.casePool).toEqual([]);
   });
 
   it("clears both ready flags when the case changes", async () => {
@@ -151,8 +168,7 @@ describe("active case", () => {
     await startMumbai(x);
     const first = await call(x.b, "session:hint", { sessionId: x.id });
     expect(first.hint.text).toMatch(/^Important to start by understanding the various functions/);
-    await sleep(60);
-    expect(x.va.view!.hintsUsedCount).toBe(1);
+    await until(x.va, (v) => v.hintsUsedCount === 1);
     await call(x.b, "session:hint", { sessionId: x.id });
     const third = await call(x.b, "session:hint", { sessionId: x.id });
     expect(third.hint.text).toMatch(/mathematical breakdown of revenues/);
@@ -175,6 +191,49 @@ describe("active case", () => {
     const r = await call(x.a, "session:solve", { sessionId: x.id, scores: fullRubric().slice(0, 5) });
     expect(r.ok).toBe(false);
   });
+
+  it("refuses every action from the wrong role or an outsider, and writes nothing", async () => {
+    const x = await lobby();
+    await startMumbai(x);
+    const outsider = await connectAs(h, await userId("ankit"));
+    const fact = x.va.view!.interviewer!.facts[0];
+    const cases: Array<[typeof x.a, string, Record<string, unknown>, string]> = [
+      [x.b, "session:solve", { scores: fullRubric(5) }, "Only the interviewer can mark the case solved"],
+      [x.a, "session:hint", {}, "Only the interviewee can ask for a hint"],
+      [x.a, "session:notepad", { content: "spy" }, "The notepad belongs to the interviewee"],
+      [outsider, "session:reveal", { factId: fact.id }, "This session is private"],
+      [outsider, "session:solve", { scores: fullRubric(5) }, "This session is private"],
+      [outsider, "session:close", {}, "This session is private"],
+    ];
+    for (const [client, event, extra, error] of cases) {
+      expect(await call(client, event as never, { sessionId: x.id, ...extra }), event).toEqual({ ok: false, error });
+    }
+    expect(await db.caseResult.count({ where: { sessionId: x.id } })).toBe(0);
+    expect(await db.sessionHintUse.count({ where: { sessionId: x.id } })).toBe(0);
+    expect(await db.sessionNote.count({ where: { sessionId: x.id } })).toBe(0);
+    expect(await db.sessionReveal.count({ where: { sessionId: x.id } })).toBe(0);
+    expect((await db.caseSession.findUniqueOrThrow({ where: { id: x.id } })).status).toBe("ACTIVE");
+  });
+
+  it("records one result when the interviewer double-submits", async () => {
+    const x = await lobby();
+    await startMumbai(x);
+    const [r1, r2] = await Promise.all([
+      call(x.a, "session:solve", { sessionId: x.id, scores: fullRubric(4) }),
+      call(x.a, "session:solve", { sessionId: x.id, scores: fullRubric(4) }),
+    ]);
+    expect([r1.ok, r2.ok].filter(Boolean)).toHaveLength(1);
+    expect(await db.caseResult.count({ where: { sessionId: x.id } })).toBe(1);
+  });
+
+  it("shows the partner as reconnecting while their socket is gone", async () => {
+    const x = await lobby();
+    x.b.disconnect();
+    await until(x.va, (v) => v.partner?.connected === false);
+    const b2 = await connectAs(h, roy);
+    await call(b2, "session:join", { sessionId: x.id });
+    await until(x.va, (v) => v.partner?.connected === true);
+  });
 });
 
 describe("after the solve", () => {
@@ -191,15 +250,24 @@ describe("after the solve", () => {
     expect((await until(x.vb, (v) => v.round === 2)).me.role).toBe("interviewer");
   });
 
-  it("lets the first post-case action win when both click at once", async () => {
+  it("lets exactly one of two simultaneous post-case choices win", async () => {
     const x = await lobby();
     await startMumbai(x);
     await call(x.a, "session:solve", { sessionId: x.id, scores: fullRubric(4) });
-    const [r1, r2] = await Promise.all([call(x.a, "session:switchRoles", { sessionId: x.id }), call(x.b, "session:close", { sessionId: x.id })]);
+    const [r1, r2] = await Promise.all([call(x.a, "session:switchRoles", { sessionId: x.id }), call(x.b, "session:newCase", { sessionId: x.id })]);
+    expect([r1, r2].filter((r) => r.ok)).toHaveLength(1);
+    expect([r1, r2].find((r) => !r.ok)).toEqual({ ok: false, error: "Your partner already chose" });
     const s = await db.caseSession.findUniqueOrThrow({ where: { id: x.id } });
-    expect(["LOBBY", "CLOSED"]).toContain(s.status);
-    expect(r1.ok || r2.ok).toBe(true);
-    if (s.status === "LOBBY") expect(s.round).toBe(2);
+    expect([s.status, s.round, s.caseId]).toEqual(["LOBBY", 2, null]);
+  });
+
+  it("Select New Case keeps the roles", async () => {
+    const x = await lobby();
+    await startMumbai(x);
+    await call(x.a, "session:solve", { sessionId: x.id, scores: fullRubric(4) });
+    await call(x.b, "session:newCase", { sessionId: x.id });
+    const v = await until(x.va, (view) => view.round === 2);
+    expect(v.me.role).toBe("interviewer");
   });
 
   it("unlocks Level 2 for the interviewee after a strong Level 1 solve", async () => {
@@ -208,9 +276,9 @@ describe("after the solve", () => {
     await call(x.a, "session:solve", { sessionId: x.id, scores: fullRubric(4) });
     await call(x.a, "session:newCase", { sessionId: x.id });
     await call(x.a, "session:setCaseFilter", { sessionId: x.id, caseType: "Profitability", difficulty: 2 });
-    await sleep(60);
-    expect(x.va.view!.poolLocked).toBe(false);
-    expect(x.va.view!.casePool.length).toBeGreaterThan(0);
+    const v = await until(x.va, (view) => view.difficulty === 2 && view.round === 2);
+    expect(v.poolLocked).toBe(false);
+    expect(v.casePool.length).toBeGreaterThan(0);
   });
 
   it("End session mid-case closes it for both with no result (R16/U10)", async () => {
@@ -220,7 +288,7 @@ describe("after the solve", () => {
     await call(x.a, "session:close", { sessionId: x.id });
     expect((await closed).by?.firstName).toBe("David");
     expect(await db.caseResult.count({ where: { sessionId: x.id } })).toBe(0);
-    expect((await call(x.b, "session:join", { sessionId: x.id })).ok).toBe(true); // can view, but…
+    expect(await call(x.b, "session:join", { sessionId: x.id })).toEqual({ ok: false, error: "This session has ended" });
     expect((await call(x.a, "session:reveal", { sessionId: x.id, factId: "x" })).error).toBe("This session has ended");
   });
 });

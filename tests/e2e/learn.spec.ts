@@ -37,18 +37,19 @@ test("quit keeps nothing; Keep learning returns to the same question", async ({ 
 
 test("a fresh learner gets a full lesson, sees correct and incorrect states, and completion saves XP", async ({ browser }) => {
   const { ctx, page } = await loginPeer(browser, "mihaela");
+  const xpOf = async () => Number((await page.getByLabel(/ XP$/).first().getAttribute("aria-label"))?.replace(/\D/g, ""));
+  const xpBefore = await xpOf();
   await page.goto("/learn/case-type-identification");
   await throughExplainers(page);
   const total = await page.getByRole("progressbar", { name: "Lesson progress" }).getAttribute("aria-valuemax");
   expect(Number(total)).toBe(3 + 6); // 3 explainers + 6 questions (pool of 6, target 6–8)
 
-  let sawWrong = false;
   for (let i = 0; i < 6; i++) {
     const options = page.getByRole("radio");
     await options.first().click();
     await page.getByRole("button", { name: "Check" }).click();
+    await expect(page.getByText(/✕ Not quite|✓ Correct!/)).toBeVisible();
     if (await page.getByText("✕ Not quite").isVisible()) {
-      sawWrong = true;
       await page.getByRole("button", { name: "Why?" }).click();
       await expect(page.getByTestId("why-panel")).toBeVisible();
       await page.getByRole("button", { name: "See Answer" }).click();
@@ -59,6 +60,8 @@ test("a fresh learner gets a full lesson, sees correct and incorrect states, and
   }
   await expect(page.getByRole("heading", { name: "Lesson complete!" })).toBeVisible();
   await expect(page.getByText("XP earned")).toBeVisible();
-  expect(typeof sawWrong).toBe("boolean");
+  // Completion persists: a reload shows more XP than before the lesson.
+  await page.goto("/learn");
+  expect(await xpOf()).toBeGreaterThan(xpBefore);
   await ctx.close();
 });

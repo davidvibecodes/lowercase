@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { requireAdmin } from "@/lib/auth/guards";
 import Link from "next/link";
 import { BookOpen, Briefcase, HelpCircle, Users } from "lucide-react";
 import { db } from "@/lib/db";
@@ -7,6 +8,8 @@ import { ResetMasteryTool } from "@/components/admin/ResetMasteryTool";
 export const metadata: Metadata = { title: "Admin" };
 
 export default async function AdminHome() {
+  // Authorize at the page too: a crafted RSC request can render a page without its layout.
+  await requireAdmin();
   const [concepts, questions, cases, users, conceptList] = await Promise.all([
     db.concept.count(),
     db.question.count(),

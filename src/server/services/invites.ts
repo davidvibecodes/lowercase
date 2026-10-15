@@ -30,12 +30,14 @@ export async function sendInvite(db: Db, fromId: string, input: SendInviteInput,
   if (!isOnline(input.toUserId)) throw new ServiceError("Friend must be online");
 
   let sessionId: string;
+  let replaced: Array<{ id: string; toId: string }> = [];
   if (input.sessionId) {
     const s = await db.caseSession.findUnique({ where: { id: input.sessionId } });
     if (!s || s.status !== "LOBBY" || s.hostId !== fromId || s.guestId) throw new ServiceError("That lobby can't take an invite");
     sessionId = s.id;
     // One open invite per lobby: a new invite replaces an older pending one.
-    await db.sessionInvite.updateMany({ where: { sessionId, status: "PENDING" }, data: { status: "CANCELLED" } });
+    replaced = await db.sessionInvite.findMany({ where: { sessionId, status: "PENDING" }, select: { id: true, toId: true } });
+    await db.sessionInvite.updateMany({ where: { id: { in: replaced.map((r) => r.id) } }, data: { status: "CANCELLED" } });
   } else {
     const caseType = isCaseType(input.caseType) ? input.caseType : null;
     const difficulty = isDifficulty(input.difficulty) ? input.difficulty : null;
@@ -46,7 +48,7 @@ export async function sendInvite(db: Db, fromId: string, input: SendInviteInput,
     data: { sessionId, fromId, toId: input.toUserId },
     include: { from: { select: personSelect }, session: true },
   });
-  return invite;
+  return { ...invite, replaced };
 }
 
 export async function acceptInvite(db: Db, inviteId: string, userId: string) {
@@ -55,10 +57,16 @@ export async function acceptInvite(db: Db, inviteId: string, userId: string) {
   if (invite.status !== "PENDING") throw new ServiceError("This invite is no longer open");
   const s = invite.session;
   if (s.status !== "LOBBY" || (s.guestId && s.guestId !== userId)) throw new ServiceError("This session is no longer open");
-  await db.$transaction([
-    db.caseSession.update({ where: { id: s.id }, data: { guestId: userId } }),
-    db.sessionInvite.update({ where: { id: inviteId }, data: { status: "ACCEPTED" } }),
-  ]);
+  // Conditional writes: a cancel, expiry or close that lands meanwhile wins.
+  await db.$transaction(async (tx) => {
+    const inv = await tx.sessionInvite.updateMany({ where: { id: inviteId, status: "PENDING" }, data: { status: "ACCEPTED" } });
+    if (inv.count === 0) throw new ServiceError("This invite is no longer open");
+    const ses = await tx.caseSession.updateMany({
+      where: { id: s.id, status: "LOBBY", OR: [{ guestId: null }, { guestId: userId }] },
+      data: { guestId: userId },
+    });
+    if (ses.count === 0) throw new ServiceError("This session is no longer open");
+  });
   return { sessionId: s.id, fromId: invite.fromId };
 }
 
