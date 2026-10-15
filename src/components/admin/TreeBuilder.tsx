@@ -19,7 +19,12 @@ function descendants(nodes: TreeNodeData[], id: string): Set<string> {
   let grew = true;
   while (grew) {
     grew = false;
-    for (const n of nodes) if (n.parentId && out.has(n.parentId) && !out.has(n.id)) (out.add(n.id), (grew = true));
+    for (const n of nodes) {
+      if (n.parentId && out.has(n.parentId) && !out.has(n.id)) {
+        out.add(n.id);
+        grew = true;
+      }
+    }
   }
   return out;
 }

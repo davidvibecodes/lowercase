@@ -23,6 +23,7 @@ export function StreakCard({ streak, bolts }: { streak: number; bolts: boolean[]
         {bolts.map((lit, i) => (
           <li key={i} className="flex flex-col items-center gap-1.5">
             <span
+              role="img"
               className={cn(
                 "grid h-10 w-full place-items-center rounded-xl border",
                 lit ? "border-amber/60 bg-amber-soft" : "border-line bg-obsidian",

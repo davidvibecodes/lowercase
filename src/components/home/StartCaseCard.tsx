@@ -59,7 +59,7 @@ export function StartCaseCard({ availability }: { availability: CaseAvailability
                 {DIFFICULTY_LABEL[l.difficulty]}
                 {!l.unlocked && <Lock size={16} className="text-amber" aria-label="Locked" />}
               </span>
-              <span className="mt-0.5 block text-xs text-faint">
+              <span className="mt-0.5 block text-xs text-muted">
                 {!l.unlocked ? unlockHint(caseType, l.difficulty) : l.cases === 0 ? "No cases yet" : `${l.cases} case${l.cases === 1 ? "" : "s"}`}
               </span>
             </button>
