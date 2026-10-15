@@ -66,6 +66,10 @@ export type SessionView = {
   selectedCase: CaseSummary | null;
   /** Cases the interviewee may play for the chosen type and level (gated). */
   casePool: CaseSummary[];
+  /** True when the chosen level is locked for the interviewee. */
+  poolLocked: boolean;
+  /** Whose progress gates apply: the interviewee, or the host before roles are set. */
+  gateFor: PersonRef | null;
   pendingInvite: { inviteId: string; to: PersonRef } | null;
   hintsUsedCount: number;
   hintsTotal: number;
