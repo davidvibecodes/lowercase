@@ -1,12 +1,6 @@
 import type { Db } from "@/lib/db";
 import { conceptInput, explainerInput, questionInput } from "@/lib/types";
-import { ServiceError } from "./invites";
-
-function parse<T>(schema: { safeParse: (v: unknown) => { success: true; data: T } | { success: false; error: { issues: Array<{ message: string }> } } }, v: unknown): T {
-  const r = schema.safeParse(v);
-  if (!r.success) throw new ServiceError(r.error.issues[0]?.message ?? "Invalid input");
-  return r.data;
-}
+import { parseInput as parse, ServiceError } from "./invites";
 
 export async function listConceptsAdmin(db: Db) {
   return db.concept.findMany({ orderBy: { order: "asc" }, include: { _count: { select: { questions: true, explainers: true } } } });

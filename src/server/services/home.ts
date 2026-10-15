@@ -3,12 +3,13 @@ import type { Db } from "@/lib/db";
 import { gateMap } from "@/lib/rules/gates";
 import { leagueDaysLeft, leagueStandings, standingsWindow, type LeagueMember } from "@/lib/rules/league";
 import { CASE_TYPES, DIFFICULTIES } from "@/lib/types";
+import { personSelect } from "./invites";
 import { getGateResults, getUserProgress } from "./progress";
 
-async function weeklyXpByUser(db: Db, userIds: string[] | null, now: Date) {
+async function weeklyXpByUser(db: Db, userIds: string[], now: Date) {
   const rows = await db.dailyActivity.groupBy({
     by: ["userId"],
-    where: { day: { in: weekDayKeys(now) }, ...(userIds ? { userId: { in: userIds } } : {}) },
+    where: { day: { in: weekDayKeys(now) }, userId: { in: userIds } },
     _sum: { xp: true },
   });
   return new Map(rows.map((r) => [r.userId, r._sum.xp ?? 0]));
@@ -20,8 +21,8 @@ function toMember(u: { id: string; username: string; firstName: string; lastName
 
 export async function getLeague(db: Db, userId: string, now = new Date()) {
   const me = await db.user.findUniqueOrThrow({ where: { id: userId }, select: { leagueName: true } });
-  const users = await db.user.findMany({ where: { leagueName: me.leagueName }, select: { id: true, username: true, firstName: true, lastName: true } });
-  const xp = await weeklyXpByUser(db, null, now);
+  const users = await db.user.findMany({ where: { leagueName: me.leagueName }, select: personSelect });
+  const xp = await weeklyXpByUser(db, users.map((u) => u.id), now);
   const standings = leagueStandings(users.map((u) => toMember(u, xp)));
   return { name: me.leagueName, daysLeft: leagueDaysLeft(now), standings, window: standingsWindow(standings, userId) };
 }

@@ -1,8 +1,16 @@
 import type { Db } from "@/lib/db";
 import type { PersonRef } from "@/lib/realtime/events";
-import { CASE_TYPES } from "@/lib/types";
+import type { z } from "zod";
+import { isCaseType, isDifficulty } from "@/lib/types";
 
 export class ServiceError extends Error {}
+
+/** Validates input with a zod schema, surfacing the first issue as a ServiceError. */
+export function parseInput<T>(schema: z.ZodType<T>, v: unknown): T {
+  const r = schema.safeParse(v);
+  if (!r.success) throw new ServiceError(r.error.issues[0]?.message ?? "Invalid input");
+  return r.data;
+}
 
 export const personSelect = { id: true, firstName: true, lastName: true, username: true } as const;
 
@@ -29,8 +37,8 @@ export async function sendInvite(db: Db, fromId: string, input: SendInviteInput,
     // One open invite per lobby: a new invite replaces an older pending one.
     await db.sessionInvite.updateMany({ where: { sessionId, status: "PENDING" }, data: { status: "CANCELLED" } });
   } else {
-    const caseType = CASE_TYPES.includes(input.caseType as never) ? input.caseType! : null;
-    const difficulty = input.difficulty && [1, 2, 3].includes(input.difficulty) ? input.difficulty : null;
+    const caseType = isCaseType(input.caseType) ? input.caseType : null;
+    const difficulty = isDifficulty(input.difficulty) ? input.difficulty : null;
     const s = await db.caseSession.create({ data: { hostId: fromId, caseType, difficulty } });
     sessionId = s.id;
   }

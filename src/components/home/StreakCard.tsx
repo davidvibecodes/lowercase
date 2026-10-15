@@ -1,11 +1,12 @@
 import { Zap } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { cn } from "@/lib/cn";
+import { weekdayIndex } from "@/lib/dates";
 
 const DAYS = ["M", "T", "W", "T", "F", "S", "S"];
 
 export function StreakCard({ streak, bolts }: { streak: number; bolts: boolean[] }) {
-  const todayIndex = (new Date().getDay() + 6) % 7;
+  const todayIndex = weekdayIndex();
   return (
     <Card className="p-6">
       <div className="flex items-center justify-between">

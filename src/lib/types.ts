@@ -7,7 +7,10 @@ export const DIFFICULTIES = [1, 2, 3] as const;
 export type Difficulty = (typeof DIFFICULTIES)[number];
 export const DIFFICULTY_LABEL: Record<Difficulty, string> = { 1: "Level 1: Easy", 2: "Level 2: Medium", 3: "Level 3: Hard" };
 
-export const CASE_ITEM_KINDS = ["fact", "hint", "recommendation", "observation"] as const;
+export const isCaseType = (v: unknown): v is CaseType => (CASE_TYPES as readonly unknown[]).includes(v);
+export const isDifficulty = (v: unknown): v is Difficulty => (DIFFICULTIES as readonly unknown[]).includes(v);
+
+export const CASE_ITEM_KINDS =["fact", "hint", "recommendation", "observation"] as const;
 export type CaseItemKind = (typeof CASE_ITEM_KINDS)[number];
 
 export const SPEAKERS = ["interviewer", "candidate"] as const;

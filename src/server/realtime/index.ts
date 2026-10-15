@@ -7,13 +7,6 @@ import { addSocket, isOnline, removeSocket } from "./presence";
 import { registerSessionHandlers, onUserDisconnected } from "./session";
 import { userRoom, type IO } from "./types";
 
-const g = globalThis as unknown as { __lowercaseIO?: IO };
-
-/** The live Socket.IO server, when this process hosts one. */
-export function getIO(): IO | undefined {
-  return g.__lowercaseIO;
-}
-
 async function friendIds(userId: string): Promise<string[]> {
   const rows = await db.friendship.findMany({ where: { userId }, select: { friendId: true } });
   return rows.map((r) => r.friendId);
@@ -58,6 +51,5 @@ export function attachRealtime(httpServer: HttpServer): IO {
     });
   });
 
-  g.__lowercaseIO = io;
   return io;
 }

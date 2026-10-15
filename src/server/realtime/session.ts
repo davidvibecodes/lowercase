@@ -2,12 +2,13 @@ import { db } from "@/lib/db";
 import type { Ack } from "@/lib/realtime/events";
 import { person } from "@/server/services/invites";
 import * as sessions from "@/server/services/sessions";
-import { errorMessage, sessionRoom, type IO, type IOSocket } from "./types";
+import { errorMessage, sessionRoom, userRoom, type IO, type IOSocket } from "./types";
+
+const userIdsOf = (sockets: Array<{ data: { userId: string } }>) => new Set(sockets.map((s) => s.data.userId));
 
 /** Who has a socket in the session room right now. */
 async function connectedIn(io: IO, sessionId: string): Promise<Set<string>> {
-  const sockets = await io.in(sessionRoom(sessionId)).fetchSockets();
-  return new Set(sockets.map((s) => s.data.userId));
+  return userIdsOf(await io.in(sessionRoom(sessionId)).fetchSockets());
 }
 
 /**
@@ -38,7 +39,7 @@ export function broadcastSession(io: IO, sessionId: string): Promise<void> {
 /** Sends each socket in the room its own role-specific projection (KTD2). */
 async function sendViews(io: IO, sessionId: string) {
   const sockets = await io.in(sessionRoom(sessionId)).fetchSockets();
-  const connected = new Set(sockets.map((s) => s.data.userId));
+  const connected = userIdsOf(sockets);
   const views = new Map<string, Awaited<ReturnType<typeof sessions.buildView>>>();
   for (const s of sockets) {
     const uid = s.data.userId;
@@ -102,11 +103,10 @@ export function registerSessionHandlers(io: IO, socket: IOSocket) {
   // Notepad saves only echo to the writer's own sockets; nothing else changes.
   socket.on("session:notepad", async ({ sessionId, content }, ack) => {
     try {
-      await sessions.saveNotepad(db, sessionId, socket.data.userId, content);
+      const { round } = await sessions.saveNotepad(db, sessionId, socket.data.userId, content);
       ack({ ok: true });
-      const mine = (await io.in(sessionRoom(sessionId)).fetchSockets()).filter((s) => s.data.userId === socket.data.userId && s.id !== socket.id);
-      const round = (await db.caseSession.findUniqueOrThrow({ where: { id: sessionId } })).round;
-      for (const s of mine) s.emit("notepad:sync", { sessionId, round, content });
+      // My other tabs (the client ignores syncs for other sessions/rounds).
+      socket.to(userRoom(socket.data.userId)).emit("notepad:sync", { sessionId, round, content });
     } catch (err) {
       ack({ ok: false, error: errorMessage(err) });
     }

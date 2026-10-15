@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { Db } from "@/lib/db";
 import { GATE_MODES, type GateMode } from "@/lib/types";
 import { resetUserProgress } from "@/server/seed-runner";
-import { ServiceError } from "./invites";
+import { parseInput, ServiceError } from "./invites";
 
 export const accountInput = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(40),
@@ -11,11 +11,10 @@ export const accountInput = z.object({
 });
 
 export async function updateAccount(db: Db, userId: string, input: unknown) {
-  const parsed = accountInput.safeParse(input);
-  if (!parsed.success) throw new ServiceError(parsed.error.issues[0].message);
-  const clash = await db.user.findFirst({ where: { email: parsed.data.email, id: { not: userId } } });
+  const data = parseInput(accountInput, input);
+  const clash = await db.user.findFirst({ where: { email: data.email, id: { not: userId } } });
   if (clash) throw new ServiceError("That email is already in use");
-  await db.user.update({ where: { id: userId }, data: parsed.data });
+  await db.user.update({ where: { id: userId }, data });
 }
 
 export async function updatePreferences(db: Db, userId: string, prefs: { soundOn?: boolean; reducedMotion?: boolean }) {

@@ -1,6 +1,7 @@
 import { dayKey, startOfWeek, weekDayKeys } from "@/lib/dates";
 import type { Db } from "@/lib/db";
 import { gateMap } from "@/lib/rules/gates";
+import { averageScore } from "@/lib/rules/rubric";
 import { CASE_TYPES, DIFFICULTIES } from "@/lib/types";
 import { getGateResults } from "./progress";
 
@@ -74,7 +75,7 @@ export async function getAnalytics(db: Db, userId: string, range: Range, now = n
       return {
         difficulty,
         count: rows.length,
-        avgScore: rows.length ? rows.reduce((a, r) => a + r.avgScore, 0) / rows.length : null,
+        avgScore: rows.length ? averageScore(rows.map((r) => r.avgScore)) : null,
         unlocked: gates[caseType][difficulty],
       };
     }),

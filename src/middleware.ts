@@ -1,6 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-
-const SESSION_COOKIE = "lc_session";
+import { SESSION_COOKIE } from "@/lib/auth/constants";
 
 /** Cheap presence check only; signature and admin checks run server-side (KTD5). */
 export function middleware(req: NextRequest) {

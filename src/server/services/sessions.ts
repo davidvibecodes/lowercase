@@ -12,7 +12,7 @@ import { isLevelUnlocked } from "@/lib/rules/gates";
 import { averageScore, validateRubric } from "@/lib/rules/rubric";
 import { XP_INTERVIEWEE_SOLVE, XP_INTERVIEWER_SOLVE } from "@/lib/rules/xp";
 import type { CaseSummary, HintView, PersonRef, SessionView } from "@/lib/realtime/events";
-import { CASE_TYPES, type CaseType, type Difficulty, type Role, type SessionStatus } from "@/lib/types";
+import { isCaseType, isDifficulty, type CaseType, type Difficulty, type Role, type SessionStatus } from "@/lib/types";
 import { personSelect, ServiceError } from "./invites";
 import { getGateResults, recordCaseSolved } from "./progress";
 
@@ -92,7 +92,7 @@ export async function setCaseFilter(db: Db, sessionId: string, userId: string, c
   const s = await load(db, sessionId);
   assertParticipant(s, userId);
   assertStatus(s, "LOBBY");
-  if (!CASE_TYPES.includes(caseType as CaseType) || ![1, 2, 3].includes(difficulty)) throw new ServiceError("Invalid case filter");
+  if (!isCaseType(caseType) || !isDifficulty(difficulty)) throw new ServiceError("Invalid case filter");
   await db.caseSession.update({ where: { id: s.id }, data: { caseType, difficulty, caseId: null, ...resetReady } });
 }
 
@@ -158,13 +158,16 @@ export async function saveNotepad(db: Db, sessionId: string, userId: string, con
   assertParticipant(s, userId);
   assertStatus(s, "ACTIVE", "SOLVED");
   if (s.intervieweeId !== userId) throw new ServiceError("The notepad belongs to the interviewee");
-  const text = content.slice(0, 50_000);
+  const text = content.slice(0, NOTEPAD_MAX_CHARS);
   await db.sessionNote.upsert({
     where: { sessionId_round_userId: { sessionId: s.id, round: s.round, userId } },
     create: { sessionId: s.id, round: s.round, userId, content: text },
     update: { content: text },
   });
+  return { round: s.round };
 }
+
+const NOTEPAD_MAX_CHARS = 50_000;
 
 export async function solveCase(db: Db, sessionId: string, userId: string, scores: Array<{ criterion: string; score: number; notes: string }>) {
   const s = await load(db, sessionId);
@@ -234,13 +237,15 @@ export async function buildView(db: Db, sessionId: string, viewerId: string, con
   const ready = (uid: string) => (s.hostId === uid ? s.hostReady : s.guestReady);
   const { pool, locked } = s.status === "LOBBY" ? await casePool(db, s) : { pool: [], locked: false };
 
+  // Only the interviewer's projection uses the transcript and tree.
+  const forInterviewer = roleOf(s, viewerId) === "interviewer";
   const c = s.caseId
     ? await db.case.findUnique({
         where: { id: s.caseId },
         include: {
           items: { where: { archivedAt: null }, orderBy: { order: "asc" } },
-          transcript: { orderBy: { order: "asc" } },
-          nodes: { orderBy: [{ order: "asc" }] },
+          transcript: forInterviewer ? { orderBy: { order: "asc" } } : false,
+          nodes: forInterviewer ? { orderBy: [{ order: "asc" }] } : false,
         },
       })
     : null;
@@ -288,8 +293,8 @@ export async function buildView(db: Db, sessionId: string, viewerId: string, con
             hints: hints.map((h) => ({ id: h.id, text: h.text, usedAt: usedAt.get(h.id) ?? null })),
             recommendations: items.filter((i) => i.kind === "recommendation").map((i) => ({ id: i.id, text: i.text })),
             observations: items.filter((i) => i.kind === "observation").map((i) => ({ id: i.id, text: i.text })),
-            transcript: c.transcript.map((t) => ({ id: t.id, speaker: t.speaker as "interviewer" | "candidate", text: t.text })),
-            tree: c.nodes.map((n) => ({ id: n.id, parentId: n.parentId, label: n.label, isCorrectPath: n.isCorrectPath, order: n.order })),
+            transcript: (c.transcript ?? []).map((t) => ({ id: t.id, speaker: t.speaker as "interviewer" | "candidate", text: t.text })),
+            tree: (c.nodes ?? []).map((n) => ({ id: n.id, parentId: n.parentId, label: n.label, isCorrectPath: n.isCorrectPath, order: n.order })),
           }
         : null,
     interviewee:

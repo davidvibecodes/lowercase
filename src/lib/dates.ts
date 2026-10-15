@@ -12,16 +12,15 @@ export function addDays(date: Date, days: number): Date {
   return out;
 }
 
-export function parseDayKey(key: string): Date {
-  const [y, m, d] = key.split("-").map(Number);
-  return new Date(y, m - 1, d);
+/** Monday-first weekday index: Mon=0 … Sun=6. */
+export function weekdayIndex(date: Date = new Date()): number {
+  return (date.getDay() + 6) % 7;
 }
 
 /** Monday 00:00 of the week containing `date`. */
 export function startOfWeek(date: Date = new Date()): Date {
   const out = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const offset = (out.getDay() + 6) % 7; // Mon=0 … Sun=6
-  out.setDate(out.getDate() - offset);
+  out.setDate(out.getDate() - weekdayIndex(out));
   return out;
 }
 

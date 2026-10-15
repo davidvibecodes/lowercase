@@ -1,3 +1,5 @@
+import { weekdayIndex } from "@/lib/dates";
+
 export const ADVANCE_CUTOFF = 15;
 
 export type LeagueMember = { id: string; username: string; name: string; weeklyXp: number };
@@ -11,8 +13,7 @@ export function leagueStandings(members: LeagueMember[]): Standing[] {
 
 /** Full days left after today until the week ends on Sunday. */
 export function leagueDaysLeft(today: Date = new Date()): number {
-  const dow = (today.getDay() + 6) % 7; // Mon=0 … Sun=6
-  return 6 - dow;
+  return 6 - weekdayIndex(today);
 }
 
 /** Three rows centred on the user (clamped at the ends). */

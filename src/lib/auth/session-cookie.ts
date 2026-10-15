@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { SESSION_COOKIE } from "./constants";
 
-export const SESSION_COOKIE = "lc_session";
+export { SESSION_COOKIE };
 const MAX_AGE_SECONDS = 60 * 60 * 24 * 30;
 
 function secret(): string {

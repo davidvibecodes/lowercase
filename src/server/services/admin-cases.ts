@@ -3,7 +3,7 @@ import type { Db } from "@/lib/db";
 import { validateTree } from "@/lib/rules/tree";
 import { caseInput, CASE_ITEM_KINDS, transcriptTurnInput, treeNodeInput, type CaseItemKind } from "@/lib/types";
 import { writeTree } from "@/server/seed-runner";
-import { ServiceError } from "./invites";
+import { parseInput, ServiceError } from "./invites";
 
 export async function listCasesAdmin(db: Db) {
   return db.case.findMany({
@@ -23,11 +23,7 @@ export async function getCaseAdmin(db: Db, id: string) {
   });
 }
 
-function parse<T>(schema: z.ZodType<T>, v: unknown): T {
-  const r = schema.safeParse(v);
-  if (!r.success) throw new ServiceError(r.error.issues[0]?.message ?? "Invalid input");
-  return r.data;
-}
+const parse = parseInput;
 
 export async function createCase(db: Db, input: unknown) {
   return db.case.create({ data: parse(caseInput, input) });
