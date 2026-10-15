@@ -24,21 +24,23 @@ export function move<T>(list: T[], i: number, dir: -1 | 1): T[] {
   return out;
 }
 
-/** Ordered list of short text items (facts, hints, recommendations, observations). */
-export function OrderedListEditor({ label, items, onChange, placeholder }: { label: string; items: string[]; onChange: (v: string[]) => void; placeholder?: string }) {
+export type ListItem = { id: string | null; text: string };
+
+/** Ordered list of short text items (facts, hints, recommendations, observations). Ids travel with their text. */
+export function OrderedListEditor({ label, items, onChange, placeholder }: { label: string; items: ListItem[]; onChange: (v: ListItem[]) => void; placeholder?: string }) {
   return (
     <fieldset>
       <legend className="mb-2 text-sm font-bold text-muted">{label}</legend>
       <ol className="space-y-2">
         {items.map((t, i) => (
-          <li key={i} className="flex items-start gap-2">
+          <li key={t.id ?? `new-${i}`} className="flex items-start gap-2">
             <span className="mt-2.5 w-5 text-right text-sm font-bold tabular-nums text-faint">{i + 1}</span>
             <textarea
               aria-label={`${label} ${i + 1}`}
               rows={2}
-              value={t}
+              value={t.text}
               placeholder={placeholder}
-              onChange={(e) => onChange(items.map((x, j) => (j === i ? e.target.value : x)))}
+              onChange={(e) => onChange(items.map((x, j) => (j === i ? { ...x, text: e.target.value } : x)))}
               className={cn(inputCls, "resize-y text-[14px]")}
             />
             <div className="flex flex-col">
@@ -55,7 +57,7 @@ export function OrderedListEditor({ label, items, onChange, placeholder }: { lab
           </li>
         ))}
       </ol>
-      <Button size="sm" variant="ghost" className="mt-2" onClick={() => onChange([...items, ""])}>
+      <Button size="sm" variant="ghost" className="mt-2" onClick={() => onChange([...items, { id: null, text: "" }])}>
         <Plus size={16} aria-hidden /> Add
       </Button>
     </fieldset>
