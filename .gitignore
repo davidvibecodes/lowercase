@@ -1,0 +1,23 @@
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# local data and secrets
+.env
+prisma/*.db
+prisma/*.db-journal
+prisma/*.db-wal
+prisma/*.db-shm
+dev.db*
+e2e.db*
+test.db*
+
+# test output
+test-results/
+playwright-report/
+blob-report/
+
+# reference material supplied by the owner (licensed casebook content)
+919322690407_s_whatsapp_net-*.jpg
