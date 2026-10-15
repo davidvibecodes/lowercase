@@ -22,7 +22,7 @@ export type GateMode = (typeof GATE_MODES)[number];
 export const SESSION_STATUSES = ["LOBBY", "ACTIVE", "SOLVED", "CLOSED"] as const;
 export type SessionStatus = (typeof SESSION_STATUSES)[number];
 
-export const INVITE_STATUSES = ["PENDING", "ACCEPTED", "DECLINED", "CANCELLED"] as const;
+export const INVITE_STATUSES = ["PENDING", "ACCEPTED", "DECLINED", "CANCELLED", "EXPIRED"] as const;
 export type InviteStatus = (typeof INVITE_STATUSES)[number];
 
 export type Role = "interviewer" | "interviewee";

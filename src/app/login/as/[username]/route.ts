@@ -8,16 +8,15 @@ import { createSessionValue, SESSION_COOKIE, sessionCookieOptions } from "@/lib/
  */
 export async function GET(req: NextRequest, { params }: { params: Promise<{ username: string }> }) {
   const { username } = await params;
+  // Redirect on the host the browser used: the cookie is scoped to it.
+  const origin = `${req.nextUrl.protocol}//${req.headers.get("host") ?? req.nextUrl.host}`;
   const result = await authProvider.signIn({ username });
-  const url = req.nextUrl.clone();
-  url.search = "";
   if (!result.ok) {
-    url.pathname = "/login";
+    const url = new URL("/login", origin);
     url.searchParams.set("error", result.error);
     return NextResponse.redirect(url);
   }
-  url.pathname = "/";
-  const res = NextResponse.redirect(url);
+  const res = NextResponse.redirect(new URL("/", origin));
   res.cookies.set(SESSION_COOKIE, createSessionValue(result.user.id), sessionCookieOptions);
   return res;
 }
