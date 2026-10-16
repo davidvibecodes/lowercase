@@ -6,6 +6,11 @@ next-env.d.ts
 
 # local data and secrets
 .env
+.env.local
+.env.*
+!.env.example
+prisma/backups/
+content/private/
 prisma/*.db
 prisma/*.db-journal
 prisma/*.db-wal
@@ -21,3 +26,7 @@ blob-report/
 
 # reference material supplied by the owner (licensed casebook content)
 919322690407_s_whatsapp_net-*.jpg
+
+# owner's local working files (never part of the app)
+UI/
+*.docx
