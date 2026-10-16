@@ -6,7 +6,7 @@ import { useInviteFriend } from "@/components/friends/useInviteFriend";
 import { usePresence } from "@/stores/presence";
 import { Avatar } from "./Avatar";
 
-type Friend = { id: string; username: string; firstName: string; lastName: string };
+type Friend = { id: string; username: string; firstName: string; lastName: string; avatarUrl?: string | null };
 
 export function OnlineFriendsCard({ friends }: { friends: Friend[] }) {
   const online = usePresence((s) => s.online);
@@ -24,7 +24,7 @@ export function OnlineFriendsCard({ friends }: { friends: Friend[] }) {
             const waiting = pending?.toUserId === f.id;
             return (
               <li key={f.id} className="flex items-center gap-3 rounded-2xl border border-line bg-obsidian px-3 py-2.5">
-                <Avatar first={f.firstName} last={f.lastName} online />
+                <Avatar first={f.firstName} last={f.lastName} src={f.avatarUrl} online />
                 <span className="flex-1 truncate font-bold">
                   {f.firstName} {f.lastName}
                 </span>

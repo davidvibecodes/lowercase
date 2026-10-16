@@ -52,7 +52,7 @@ function Players({ view }: { view: SessionView }) {
       <ul className="space-y-2.5">
         {rows.map((p) => (
           <li key={p.id} className="flex items-center gap-3 rounded-2xl border border-line bg-obsidian px-3 py-2.5">
-            <Avatar first={p.firstName} last={p.lastName} online={p.connected} />
+            <Avatar first={p.firstName} last={p.lastName} src={p.avatarUrl} online={p.connected} />
             <div className="min-w-0 flex-1">
               <p className="truncate font-bold">
                 {p.firstName} {p.lastName} {p.you && <span className="text-faint">(you)</span>}

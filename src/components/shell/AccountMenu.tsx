@@ -6,6 +6,7 @@ import { LayoutDashboard, LogOut, Menu, Settings, UserRound } from "lucide-react
 import { useUser } from "@/lib/auth/AuthProvider";
 import { signOutAction } from "@/lib/auth/actions";
 import { disconnectSocket } from "@/lib/realtime/socket";
+import { Avatar } from "@/components/home/Avatar";
 
 export function AccountMenu() {
   const user = useUser();
@@ -40,11 +41,14 @@ export function AccountMenu() {
       </button>
       {open && (
         <div role="menu" className="absolute right-0 top-12 w-64 rounded-2xl border border-line bg-surface p-2 shadow-2xl">
-          <div className="px-3 pb-2 pt-1">
-            <p className="font-extrabold">
-              {user.firstName} {user.lastName}
-            </p>
-            <p className="truncate text-sm text-faint">@{user.username}</p>
+          <div className="flex items-center gap-3 px-3 pb-2 pt-1">
+            <Avatar first={user.firstName} last={user.lastName} src={user.avatarUrl} size="sm" />
+            <div className="min-w-0">
+              <p className="truncate font-extrabold">
+                {user.firstName} {user.lastName}
+              </p>
+              <p className="truncate text-sm text-faint">@{user.username}</p>
+            </div>
           </div>
           <div className="my-1 h-px bg-line" />
           <Link role="menuitem" href="/settings#preferences" className={item} onClick={() => setOpen(false)}>

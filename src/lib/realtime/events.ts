@@ -6,7 +6,7 @@ import type { CaseType, Difficulty, Role, SessionStatus } from "@/lib/types";
 
 export type Ack<T = object> = (res: ({ ok: true } & T) | { ok: false; error: string }) => void;
 
-export type PersonRef = { id: string; firstName: string; lastName: string; username: string };
+export type PersonRef = { id: string; firstName: string; lastName: string; username: string; avatarUrl?: string | null };
 
 export type InvitePayload = {
   inviteId: string;

@@ -7,7 +7,8 @@ import { parseInput, ServiceError } from "./invites";
 /** Email comes from the Google account and isn't editable here (R5, KTD5); admin is derived from it. */
 export const accountInput = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(40),
-  lastName: z.string().trim().min(1, "Last name is required").max(40),
+  // Empty is allowed: some Google accounts have a single name (KTD4).
+  lastName: z.string().trim().max(40),
 });
 
 export async function updateAccount(db: Db, userId: string, input: unknown) {

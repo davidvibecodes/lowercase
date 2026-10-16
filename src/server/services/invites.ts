@@ -12,12 +12,12 @@ export function parseInput<T>(schema: z.ZodType<T>, v: unknown): T {
   return r.data;
 }
 
-export const personSelect = { id: true, firstName: true, lastName: true, username: true } as const;
+export const personSelect = { id: true, firstName: true, lastName: true, username: true, avatarUrl: true } as const;
 
 /** Only people who finished onboarding are listed or found (KTD7). */
 export const onboarded = { username: { not: null } } as const;
 
-type PersonRow = { id: string; firstName: string; lastName: string; username: string | null };
+type PersonRow = { id: string; firstName: string; lastName: string; username: string | null; avatarUrl?: string | null };
 
 /**
  * Narrows a person row for display. Every person reachable from a session, an
@@ -25,7 +25,7 @@ type PersonRow = { id: string; firstName: string; lastName: string; username: st
  * anyone who hasn't chosen one, and lists filter with `onboarded`.
  */
 export function toPerson(u: PersonRow): PersonRef {
-  return { id: u.id, firstName: u.firstName, lastName: u.lastName, username: u.username ?? "" };
+  return { id: u.id, firstName: u.firstName, lastName: u.lastName, username: u.username ?? "", avatarUrl: u.avatarUrl ?? null };
 }
 
 export async function areFriends(db: Db, a: string, b: string) {
