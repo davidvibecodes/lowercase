@@ -7,6 +7,7 @@ import { getUserProgress } from "@/server/services/progress";
 import { GamificationHydrator } from "./GamificationHydrator";
 import { InviteListener } from "./InviteListener";
 import { ReducedMotionFlag } from "./ReducedMotionFlag";
+import { SoundPrefsSync } from "./SoundPrefsSync";
 import { TopNav } from "./TopNav";
 
 /** Signed-in chrome shared by every authenticated route group. */
@@ -15,7 +16,7 @@ export async function AppShell({ children, nav = true }: { children: React.React
   const [progress, friends, prefs] = await Promise.all([
     getUserProgress(db, user.id),
     db.friendship.findMany({ where: { userId: user.id }, select: { friendId: true } }),
-    db.user.findUniqueOrThrow({ where: { id: user.id }, select: { reducedMotion: true } }),
+    db.user.findUniqueOrThrow({ where: { id: user.id }, select: { reducedMotion: true, soundOn: true } }),
   ]);
   const online = new Set(onlineUserIds());
   const initialOnline = friends.map((f) => f.friendId).filter((id) => online.has(id));
@@ -24,6 +25,7 @@ export async function AppShell({ children, nav = true }: { children: React.React
     <AuthProvider user={user}>
       <ReducedMotionFlag on={prefs.reducedMotion}>
         <GamificationHydrator xp={progress.xp} streak={progress.streak} />
+        <SoundPrefsSync userId={user.id} soundOn={prefs.soundOn} />
         <RealtimeBridge initialOnline={initialOnline} />
         {nav && <TopNav xp={progress.xp} streak={progress.streak} />}
         {children}

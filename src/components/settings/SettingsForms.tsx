@@ -17,6 +17,7 @@ import {
   type SettingsResult,
 } from "@/app/(app)/settings/actions";
 import type { GateMode } from "@/lib/types";
+import { setSoundPreference, useSound } from "@/stores/sound";
 
 const input = "mt-1 h-11 w-full rounded-xl border border-line-strong bg-obsidian px-3 font-semibold outline-none focus:border-royal-bright";
 
@@ -94,8 +95,15 @@ function Toggle({ label, description, checked, onChange }: { label: string; desc
   );
 }
 
-export function Preferences({ soundOn, reducedMotion }: { soundOn: boolean; reducedMotion: boolean }) {
-  const [prefs, setPrefs] = useState({ soundOn, reducedMotion });
+export function Preferences({ soundOn: initialSound, reducedMotion }: { soundOn: boolean; reducedMotion: boolean }) {
+  const [prefs, setPrefs] = useState({ reducedMotion });
+  // The switch renders from the shared store, so a change in another tab moves it too (R15).
+  // Until the shell has hydrated the store, show the account value instead of the store's default.
+  const soundOn = useSound((s) => (s.userId ? s.enabled : initialSound));
+  const toggleSound = async (on: boolean) => {
+    const ok = await setSoundPreference(on, () => updatePreferencesAction({ soundOn: on }));
+    toast(ok ? "Preferences saved" : "Couldn't save the sound setting. Try again.", ok ? "success" : "warning");
+  };
   const { go } = useAction();
   const update = (p: Partial<typeof prefs>) => {
     const next = { ...prefs, ...p };
@@ -106,7 +114,7 @@ export function Preferences({ soundOn, reducedMotion }: { soundOn: boolean; redu
     <Card className="mt-6 p-6" id="preferences">
       <h2 className="text-lg font-extrabold">Preferences</h2>
       <div className="mt-2 divide-y divide-line">
-        <Toggle label="Sound effects" description="Chime on a correct answer." checked={prefs.soundOn} onChange={(v) => update({ soundOn: v })} />
+        <Toggle label="Sound effects" description="Chime on a correct answer." checked={soundOn} onChange={(v) => void toggleSound(v)} />
         <Toggle label="Reduce motion" description="Minimize animations (your OS setting is always respected)." checked={prefs.reducedMotion} onChange={(v) => update({ reducedMotion: v })} />
       </div>
     </Card>

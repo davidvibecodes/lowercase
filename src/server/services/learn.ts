@@ -12,10 +12,9 @@ export async function getLesson(db: Db, userId: string, slug: string, opts: { ca
     },
   });
   if (!concept) return null;
-  const [mastery, history, user] = await Promise.all([
+  const [mastery, history] = await Promise.all([
     db.questionMastery.findMany({ where: { userId, question: { conceptId: concept.id } }, select: { questionId: true } }),
     getConceptHistory(db, userId, concept.id),
-    db.user.findUniqueOrThrow({ where: { id: userId }, select: { soundOn: true } }),
   ]);
   if (!concept.published && !opts.canPreview) return null;
   const masteredIds = new Set(mastery.map((m) => m.questionId));
@@ -37,7 +36,6 @@ export async function getLesson(db: Db, userId: string, slug: string, opts: { ca
     mastered,
     totalQuestions: concept.questions.length,
     masteredCount: masteredIds.size,
-    soundOn: user.soundOn,
   };
 }
 

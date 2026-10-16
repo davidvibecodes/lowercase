@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { Markdown } from "@/components/ui/Markdown";
 import { Modal } from "@/components/ui/Modal";
 import { SegmentedProgress } from "@/components/ui/ProgressBar";
-import { playChime } from "@/lib/chime";
+import { play } from "@/lib/sound";
 import { useActivity } from "@/stores/activity";
 import { useLesson, type LessonQuestion } from "@/stores/lesson";
 import { CompletionScreen } from "./CompletionScreen";
@@ -19,7 +19,6 @@ export type LessonData = {
   explainers: Array<{ id: string; title: string; body: string }>;
   questions: LessonQuestion[];
   mode: "high-volume" | "reduced";
-  soundOn: boolean;
 };
 
 export function LessonRunner({ lesson }: { lesson: LessonData }) {
@@ -60,7 +59,8 @@ export function LessonRunner({ lesson }: { lesson: LessonData }) {
     setWhyOpen(false);
     if (r === "correct") {
       if (useLesson.getState().states[useLesson.getState().questionIndex].attempts.length === 1) setXpBurst((n) => n + 1);
-      if (lesson.soundOn) playChime();
+      // The player checks the live preference, so a change in another tab applies here (R16).
+      play("correct");
     }
   };
   const onContinue = () => {
