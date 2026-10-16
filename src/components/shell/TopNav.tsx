@@ -7,6 +7,7 @@ import { useUser } from "@/lib/auth/AuthProvider";
 import { cn } from "@/lib/cn";
 import { AccountMenu } from "./AccountMenu";
 import { OnlineBadge } from "./OnlineBadge";
+import { useSocial } from "@/stores/social";
 import { StreakPill, XpPill } from "./Pills";
 import { Wordmark } from "./Wordmark";
 
@@ -24,6 +25,7 @@ function isActive(pathname: string, href: string) {
 export function TopNav({ xp, streak }: { xp: number; streak: number }) {
   const pathname = usePathname();
   const user = useUser();
+  const received = useSocial((s) => s.received);
   const tabs = user.isAdmin ? [...TABS, { href: "/admin", label: "Admin CMS", icon: LayoutDashboard }] : TABS;
 
   return (
@@ -45,9 +47,17 @@ export function TopNav({ xp, streak }: { xp: number; streak: number }) {
                   active ? "text-ink" : "text-muted hover:text-ink",
                 )}
               >
-                <Icon size={18} aria-hidden />
+                <span className="relative">
+                  <Icon size={18} aria-hidden />
+                  {href === "/friends" && received > 0 && (
+                    <span className="absolute -right-2 -top-1.5 grid min-w-4 place-items-center rounded-full bg-amber px-1 text-[10px] font-extrabold leading-4 text-obsidian" aria-hidden>
+                      {received}
+                    </span>
+                  )}
+                </span>
                 <span className="hidden lg:inline">{label}</span>
                 <span className="sr-only lg:hidden">{label}</span>
+                {href === "/friends" && received > 0 && <span className="sr-only">, {received} pending</span>}
                 {active && <span className="absolute inset-x-2 bottom-0 h-[3px] rounded-t-full bg-emerald" aria-hidden />}
               </Link>
             );

@@ -88,6 +88,8 @@ export type ServerToClientEvents = {
   "session:state": (view: SessionView) => void;
   "session:closed": (p: { sessionId: string; by: PersonRef | null }) => void;
   "notepad:sync": (p: { sessionId: string; round: number; content: string }) => void;
+  /** Friend requests or group invites changed for this user (R18); carries their Received count. */
+  "social:changed": (p: { received: number }) => void;
 };
 
 export type SolvePayload = { sessionId: string; scores: Array<{ criterion: string; score: number; notes: string }> };

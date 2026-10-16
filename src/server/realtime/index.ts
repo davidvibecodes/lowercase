@@ -5,6 +5,7 @@ import { sessionValueFromCookieHeader, verifySessionValue } from "@/lib/auth/ses
 import { db } from "@/lib/db";
 import { isAllowedHost, isAllowedOrigin } from "@/server/loopback";
 import { registerInviteHandlers } from "./invites";
+import { setIo } from "./io-handle";
 import { addSocket, isOnline, removeSocket } from "./presence";
 import { registerSessionHandlers, onUserDisconnected } from "./session";
 import { userRoom, type IO } from "./types";
@@ -28,6 +29,8 @@ export function attachRealtime(httpServer: HttpServer): IO {
       cb(null, isAllowedHost(req.headers.host, port) && isAllowedOrigin(req.headers.origin, port));
     },
   });
+
+  setIo(io);
 
   io.use(async (socket, next) => {
     const session = verifySessionValue(sessionValueFromCookieHeader(socket.handshake.headers.cookie));
