@@ -14,7 +14,7 @@ describe("seed", () => {
   it("creates exactly one admin owner with the expected identity", async () => {
     const owners = await db.user.findMany({ where: { username: "davidsathyandevice" } });
     expect(owners).toHaveLength(1);
-    expect(owners[0]).toMatchObject({ firstName: "David", lastName: "Sathyan", email: "davidsathyandevice@gmail.com", isAdmin: true });
+    expect(owners[0]).toMatchObject({ firstName: "David", lastName: "Sathyan", email: "davidsathyandevice@gmail.com", googleSub: null });
   });
 
   it("seeds Roy, Mihaela and Ankit as friends of the owner, plus a study group of four", async () => {
@@ -35,8 +35,10 @@ describe("seed", () => {
         env: { ...process.env, DATABASE_URL: `file:./${file}` },
         stdio: "pipe",
       });
-    expect(run().status).toBe(0);
-    expect(run().status).toBe(0);
+    const first = run();
+    expect(first.status, first.stderr.toString() + first.stdout.toString()).toBe(0);
+    const second = run();
+    expect(second.status, second.stderr.toString() + second.stdout.toString()).toBe(0);
     const probe = new PrismaClient({ datasources: { db: { url: `file:./${file}` } } });
     try {
       expect(await probe.user.count()).toBe(await db.user.count());

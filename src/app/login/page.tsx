@@ -13,10 +13,11 @@ const PEERS = ["roy", "mihaela", "ankit"];
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   if (await getCurrentUser()) redirect("/");
   const { error } = await searchParams;
-  const peers = await db.user.findMany({
+  const rows = await db.user.findMany({
     where: { username: { in: PEERS } },
     select: { username: true, firstName: true, lastName: true },
   });
+  const peers = rows.map((p) => ({ ...p, username: p.username ?? "" }));
   peers.sort((a, b) => PEERS.indexOf(a.username) - PEERS.indexOf(b.username));
 
   return (

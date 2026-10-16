@@ -11,9 +11,9 @@ import type { Db } from "@/lib/db";
 import { isLevelUnlocked } from "@/lib/rules/gates";
 import { averageScore, validateRubric } from "@/lib/rules/rubric";
 import { XP_INTERVIEWEE_SOLVE, XP_INTERVIEWER_SOLVE } from "@/lib/rules/xp";
-import type { CaseSummary, HintView, PersonRef, SessionView } from "@/lib/realtime/events";
+import type { CaseSummary, HintView, SessionView } from "@/lib/realtime/events";
 import { isCaseType, isDifficulty, type CaseType, type Difficulty, type Role, type SessionStatus } from "@/lib/types";
-import { personSelect, ServiceError } from "./invites";
+import { personSelect, ServiceError, toPerson } from "./invites";
 import { getGateResults, recordCaseSolved } from "./progress";
 
 export { ServiceError };
@@ -280,16 +280,16 @@ export async function buildView(db: Db, sessionId: string, viewerId: string, con
     id: s.id,
     status: s.status as SessionStatus,
     round: s.round,
-    me: { ...me, role, ready: ready(viewerId) },
-    partner: partner ? { ...partner, role: roleOf(s, partner.id), ready: ready(partner.id), connected: connected.has(partner.id) } : null,
+    me: { ...toPerson(me), role, ready: ready(viewerId) },
+    partner: partner ? { ...toPerson(partner), role: roleOf(s, partner.id), ready: ready(partner.id), connected: connected.has(partner.id) } : null,
     isHost: s.hostId === viewerId,
     caseType: (s.caseType as CaseType) ?? null,
     difficulty: (s.difficulty as Difficulty) ?? null,
     selectedCase: summary,
     casePool: pool,
     poolLocked: locked,
-    gateFor: gateUser,
-    pendingInvite: pending ? { inviteId: pending.id, to: pending.to as PersonRef } : null,
+    gateFor: gateUser ? toPerson(gateUser) : null,
+    pendingInvite: pending ? { inviteId: pending.id, to: toPerson(pending.to) } : null,
     hintsUsedCount: hintUses.length,
     hintsTotal: hints.length,
     interviewer:

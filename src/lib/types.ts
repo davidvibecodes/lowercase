@@ -10,8 +10,18 @@ export const DIFFICULTY_LABEL: Record<Difficulty, string> = { 1: "Level 1: Easy"
 export const isCaseType = (v: unknown): v is CaseType => (CASE_TYPES as readonly unknown[]).includes(v);
 export const isDifficulty = (v: unknown): v is Difficulty => (DIFFICULTIES as readonly unknown[]).includes(v);
 
-export const CASE_ITEM_KINDS =["fact", "hint", "recommendation", "observation"] as const;
+export const CASE_ITEM_KINDS = ["fact", "hint", "recommendation", "observation", "given"] as const;
 export type CaseItemKind = (typeof CASE_ITEM_KINDS)[number];
+
+/** Casebank 2.0.0 vocabularies (KTD11, KTD12). */
+export const FACT_CATEGORIES = ["CLARIFYING_SCOPING", "TREE_DIRECTIONAL", "TREE_ELIMINATION", "ROOT_CAUSE"] as const;
+export type FactCategory = (typeof FACT_CATEGORIES)[number];
+
+export const NODE_STATUSES = ["ACTIVE_BRANCH", "ELIMINATED_BRANCH", "ROOT_CAUSE"] as const;
+export type NodeStatus = (typeof NODE_STATUSES)[number];
+
+export const SOCIAL_STATUSES = ["PENDING", "ACCEPTED", "DECLINED", "CANCELLED"] as const;
+export type SocialStatus = (typeof SOCIAL_STATUSES)[number];
 
 export const SPEAKERS = ["interviewer", "candidate"] as const;
 export type Speaker = (typeof SPEAKERS)[number];

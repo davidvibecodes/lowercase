@@ -13,11 +13,14 @@ datasource db {
 
 model User {
   id            String   @id @default(cuid())
-  username      String   @unique
+  // Always stored lowercase (src/lib/username.ts). Null until onboarding; SQLite allows many NULLs under UNIQUE.
+  username      String?  @unique
   firstName     String
   lastName      String
+  // Always stored lowercase. Written only from verified Google claims or the seed; admin is derived from it.
   email         String   @unique
-  isAdmin       Boolean  @default(false)
+  googleSub     String?  @unique
+  avatarUrl     String?
   isLeagueBot   Boolean  @default(false)
   xp            Int      @default(0)
   gateMode      String   @default("auto")
@@ -26,17 +29,37 @@ model User {
   reducedMotion Boolean  @default(false)
   createdAt     DateTime @default(now())
 
-  friendships     Friendship[]       @relation("UserFriendships")
-  friendOf        Friendship[]       @relation("FriendOfUser")
-  groupsOwned     StudyGroup[]
-  memberships     GroupMember[]
-  mastery         QuestionMastery[]
-  answers         AnswerEvent[]
-  lessons         LessonCompletion[]
-  activity        DailyActivity[]
-  invitesSent     SessionInvite[]    @relation("InviteFrom")
-  invitesReceived SessionInvite[]    @relation("InviteTo")
-  notes           SessionNote[]
+  friendships          Friendship[]       @relation("UserFriendships")
+  friendOf             Friendship[]       @relation("FriendOfUser")
+  groupsOwned          StudyGroup[]
+  memberships          GroupMember[]
+  mastery              QuestionMastery[]
+  answers              AnswerEvent[]
+  lessons              LessonCompletion[]
+  activity             DailyActivity[]
+  invitesSent          SessionInvite[]    @relation("InviteFrom")
+  invitesReceived      SessionInvite[]    @relation("InviteTo")
+  notes                SessionNote[]
+  requestsSent         FriendRequest[]    @relation("RequestFrom")
+  requestsReceived     FriendRequest[]    @relation("RequestTo")
+  groupInvitesSent     GroupInvite[]      @relation("GroupInviteFrom")
+  groupInvitesReceived GroupInvite[]      @relation("GroupInviteTo")
+}
+
+/// openPairKey is set (sorted user ids) only while PENDING, so the unique index allows one open request per pair.
+model FriendRequest {
+  id          String    @id @default(cuid())
+  fromId      String
+  toId        String
+  status      String    @default("PENDING")
+  openPairKey String?   @unique
+  createdAt   DateTime  @default(now())
+  respondedAt DateTime?
+  from        User      @relation("RequestFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to          User      @relation("RequestTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@index([toId, status])
+  @@index([fromId, status])
 }
 
 model Friendship {
@@ -57,6 +80,25 @@ model StudyGroup {
   createdAt DateTime      @default(now())
   owner     User          @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   members   GroupMember[]
+  invites   GroupInvite[]
+}
+
+/// openKey is "groupId:toId" only while PENDING.
+model GroupInvite {
+  id          String     @id @default(cuid())
+  groupId     String
+  fromId      String
+  toId        String
+  status      String     @default("PENDING")
+  openKey     String?    @unique
+  createdAt   DateTime   @default(now())
+  respondedAt DateTime?
+  group       StudyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  from        User       @relation("GroupInviteFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to          User       @relation("GroupInviteTo", fields: [toId], references: [id], onDelete: Cascade)
+
+  @@index([toId, status])
+  @@index([fromId, status])
 }
 
 model GroupMember {
@@ -168,6 +210,10 @@ model Case {
   caseType         String
   difficulty       Int
   problemStatement String
+  // Casebank import (KTD12): case_id, industry and source pages (JSON array).
+  externalId       String?          @unique
+  industry         String?
+  sourcePages      String?
   published        Boolean          @default(true)
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
@@ -179,15 +225,26 @@ model Case {
 }
 
 model CaseItem {
-  id         String           @id @default(cuid())
-  caseId     String
-  kind       String // fact | hint | recommendation | observation
-  order      Int
-  text       String
-  archivedAt DateTime?
-  case       Case             @relation(fields: [caseId], references: [id], onDelete: Cascade)
-  reveals    SessionReveal[]
-  hintUses   SessionHintUse[]
+  id             String           @id @default(cuid())
+  caseId         String
+  kind           String // fact | hint | recommendation | observation | given
+  order          Int
+  text           String
+  archivedAt     DateTime?
+  // Casebank fields (KTD11, KTD12). Node references are stable tree keys, not row ids.
+  externalId     String?
+  category       String?
+  nodeKey        String?
+  sourceTurn     Int?
+  gatePrereqKeys String? // JSON array of node keys
+  gateTrigger    String?
+  gateAntiLeak   String?
+  gateNudge      String?
+  case           Case             @relation(fields: [caseId], references: [id], onDelete: Cascade)
+  reveals        SessionReveal[]
+  hintUses       SessionHintUse[]
+
+  @@unique([caseId, kind, externalId])
 }
 
 model TranscriptTurn {
@@ -203,12 +260,18 @@ model IssueTreeNode {
   id            String          @id @default(cuid())
   caseId        String
   parentId      String?
+  // Stable per case across delete-and-recreate tree saves (KTD11).
+  key           String
   label         String
   isCorrectPath Boolean         @default(false)
+  status        String          @default("ACTIVE_BRANCH")
+  formula       String?
   order         Int             @default(0)
   case          Case            @relation(fields: [caseId], references: [id], onDelete: Cascade)
   parent        IssueTreeNode?  @relation("TreeChildren", fields: [parentId], references: [id], onDelete: Cascade)
   children      IssueTreeNode[] @relation("TreeChildren")
+
+  @@unique([caseId, key])
 }
 
 model CaseSession {

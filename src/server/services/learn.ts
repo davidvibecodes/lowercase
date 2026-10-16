@@ -3,7 +3,7 @@ import { selectLessonQuestions, shuffle } from "@/lib/rules/lesson";
 import { getConceptHistory } from "./progress";
 
 /** Builds one lesson: explainers + adaptive, randomized unmastered questions (R10, R13). */
-export async function getLesson(db: Db, userId: string, slug: string, rng: () => number = Math.random) {
+export async function getLesson(db: Db, userId: string, slug: string, opts: { canPreview?: boolean } = {}, rng: () => number = Math.random) {
   const concept = await db.concept.findUnique({
     where: { slug },
     include: {
@@ -15,9 +15,9 @@ export async function getLesson(db: Db, userId: string, slug: string, rng: () =>
   const [mastery, history, user] = await Promise.all([
     db.questionMastery.findMany({ where: { userId, question: { conceptId: concept.id } }, select: { questionId: true } }),
     getConceptHistory(db, userId, concept.id),
-    db.user.findUniqueOrThrow({ where: { id: userId }, select: { soundOn: true, isAdmin: true } }),
+    db.user.findUniqueOrThrow({ where: { id: userId }, select: { soundOn: true } }),
   ]);
-  if (!concept.published && !user.isAdmin) return null;
+  if (!concept.published && !opts.canPreview) return null;
   const masteredIds = new Set(mastery.map((m) => m.questionId));
   const unmastered = concept.questions.filter((q) => !masteredIds.has(q.id));
   const { questions, mode, mastered } = selectLessonQuestions(unmastered, history, rng);

@@ -1,9 +1,9 @@
 import type { Db } from "@/lib/db";
-import { ServiceError, personSelect } from "./invites";
+import { ServiceError, onboarded, personSelect, toPerson } from "./invites";
 
 export async function listFriends(db: Db, userId: string) {
-  const rows = await db.friendship.findMany({ where: { userId }, select: { friend: { select: personSelect } } });
-  return rows.map((r) => r.friend).sort((a, b) => a.firstName.localeCompare(b.firstName));
+  const rows = await db.friendship.findMany({ where: { userId, friend: onboarded }, select: { friend: { select: personSelect } } });
+  return rows.map((r) => toPerson(r.friend)).sort((a, b) => a.firstName.localeCompare(b.firstName));
 }
 
 /** Case-insensitive search over people (name or username) and groups (name). */
@@ -11,12 +11,13 @@ export async function search(db: Db, userId: string, rawQuery: string) {
   const q = rawQuery.trim().toLowerCase();
   if (q.length < 2) return { people: [], groups: [] };
   const [users, friendIds, groups] = await Promise.all([
-    db.user.findMany({ where: { id: { not: userId } }, select: personSelect }),
+    db.user.findMany({ where: { id: { not: userId }, ...onboarded }, select: personSelect }),
     db.friendship.findMany({ where: { userId }, select: { friendId: true } }),
     db.studyGroup.findMany({ include: { members: { select: { userId: true } } } }),
   ]);
   const friends = new Set(friendIds.map((f) => f.friendId));
   const people = users
+    .map(toPerson)
     .filter((u) => `${u.firstName} ${u.lastName}`.toLowerCase().includes(q) || u.username.toLowerCase().includes(q))
     .slice(0, 20)
     .map((u) => ({ ...u, isFriend: friends.has(u.id) }));

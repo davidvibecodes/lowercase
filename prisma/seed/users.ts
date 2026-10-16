@@ -3,7 +3,6 @@ export type UserSeed = {
   firstName: string;
   lastName: string;
   email: string;
-  isAdmin?: boolean;
   isLeagueBot?: boolean;
   /** XP earned per day, keyed by days-ago (0 = seed day). */
   activity: Record<number, number>;
@@ -16,7 +15,6 @@ export const ownerSeed: UserSeed = {
   firstName: "David",
   lastName: "Sathyan",
   email: "davidsathyandevice@gmail.com",
-  isAdmin: true,
   activity: { 0: 80, 1: 70, 2: 70 },
 };
 

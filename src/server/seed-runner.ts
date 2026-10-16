@@ -27,7 +27,6 @@ async function createUser(tx: Tx, seed: UserSeed, now: Date) {
       firstName: seed.firstName,
       lastName: seed.lastName,
       email: seed.email,
-      isAdmin: Boolean(seed.isAdmin),
       isLeagueBot: Boolean(seed.isLeagueBot),
       xp: totalXp(seed),
     },
@@ -79,6 +78,7 @@ export async function writeTree(tx: Tx, caseId: string, nodes: TreeNodeInput[]) 
         data: {
           caseId,
           parentId: node.parentKey === null ? null : ids.get(node.parentKey)!,
+          key: node.key,
           label: node.label,
           isCorrectPath: node.isCorrectPath,
           order,
@@ -153,7 +153,7 @@ export function seedUserByUsername(username: string): UserSeed | undefined {
 /** Restores one user's progress to seed state (settings → Reset all my progress). */
 export async function resetUserProgress(db: Db, userId: string, now = new Date()) {
   const user = await db.user.findUniqueOrThrow({ where: { id: userId } });
-  const seed = seedUserByUsername(user.username);
+  const seed = user.username ? seedUserByUsername(user.username) : undefined;
   await db.$transaction(async (tx) => {
     await tx.questionMastery.deleteMany({ where: { userId } });
     await tx.answerEvent.deleteMany({ where: { userId } });

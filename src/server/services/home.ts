@@ -3,7 +3,7 @@ import type { Db } from "@/lib/db";
 import { gateMap } from "@/lib/rules/gates";
 import { leagueDaysLeft, leagueStandings, standingsWindow, type LeagueMember } from "@/lib/rules/league";
 import { CASE_TYPES, DIFFICULTIES } from "@/lib/types";
-import { personSelect } from "./invites";
+import { onboarded, personSelect, toPerson } from "./invites";
 import { getGateResults, getUserProgress } from "./progress";
 
 async function weeklyXpByUser(db: Db, userIds: string[], now: Date) {
@@ -15,13 +15,14 @@ async function weeklyXpByUser(db: Db, userIds: string[], now: Date) {
   return new Map(rows.map((r) => [r.userId, r._sum.xp ?? 0]));
 }
 
-function toMember(u: { id: string; username: string; firstName: string; lastName: string }, xp: Map<string, number>): LeagueMember {
+function toMember(row: { id: string; username: string | null; firstName: string; lastName: string }, xp: Map<string, number>): LeagueMember {
+  const u = toPerson(row);
   return { id: u.id, username: u.username, name: `${u.firstName} ${u.lastName}`, weeklyXp: xp.get(u.id) ?? 0 };
 }
 
 export async function getLeague(db: Db, userId: string, now = new Date()) {
   const me = await db.user.findUniqueOrThrow({ where: { id: userId }, select: { leagueName: true } });
-  const users = await db.user.findMany({ where: { leagueName: me.leagueName }, select: personSelect });
+  const users = await db.user.findMany({ where: { leagueName: me.leagueName, ...onboarded }, select: personSelect });
   const xp = await weeklyXpByUser(db, users.map((u) => u.id), now);
   const standings = leagueStandings(users.map((u) => toMember(u, xp)));
   return { name: me.leagueName, daysLeft: leagueDaysLeft(now), standings, window: standingsWindow(standings, userId) };
@@ -30,7 +31,7 @@ export async function getLeague(db: Db, userId: string, now = new Date()) {
 export async function getGroupStandings(db: Db, userId: string, now = new Date()) {
   const groups = await db.studyGroup.findMany({
     where: { members: { some: { userId } } },
-    include: { members: { include: { user: { select: { id: true, username: true, firstName: true, lastName: true } } } } },
+    include: { members: { where: { user: onboarded }, include: { user: { select: personSelect } } } },
     orderBy: { createdAt: "asc" },
   });
   const ids = [...new Set(groups.flatMap((g) => g.members.map((m) => m.userId)))];
@@ -94,12 +95,12 @@ export async function getHomeData(db: Db, userId: string, now = new Date()) {
     getLeague(db, userId, now),
     getGroupStandings(db, userId, now),
     db.friendship.findMany({
-      where: { userId },
-      select: { friend: { select: { id: true, username: true, firstName: true, lastName: true } } },
+      where: { userId, friend: onboarded },
+      select: { friend: { select: personSelect } },
       orderBy: { friend: { firstName: "asc" } },
     }),
     getConceptProgress(db, userId),
     getCaseAvailability(db, userId),
   ]);
-  return { progress, league, groups, friends: friends.map((f) => f.friend), concepts, availability };
+  return { progress, league, groups, friends: friends.map((f) => toPerson(f.friend)), concepts, availability };
 }
