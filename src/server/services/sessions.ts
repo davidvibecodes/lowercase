@@ -11,7 +11,7 @@ import type { Db } from "@/lib/db";
 import { isLevelUnlocked } from "@/lib/rules/gates";
 import { averageScore, validateRubric } from "@/lib/rules/rubric";
 import { XP_INTERVIEWEE_SOLVE, XP_INTERVIEWER_SOLVE } from "@/lib/rules/xp";
-import type { CaseSummary, HintView, SessionView } from "@/lib/realtime/events";
+import type { CaseSummary, FactGuidance, HintView, SessionView } from "@/lib/realtime/events";
 import { isCaseType, isDifficulty, type CaseType, type Difficulty, type Role, type SessionStatus } from "@/lib/types";
 import { personSelect, ServiceError, toPerson } from "./invites";
 import { getGateResults, recordCaseSolved } from "./progress";
@@ -273,6 +273,15 @@ export async function buildView(db: Db, sessionId: string, viewerId: string, con
   const items = c?.items ?? [];
   const facts = items.filter((i) => i.kind === "fact");
   const hints = items.filter((i) => i.kind === "hint");
+  // Uses of hints a re-import archived don't count against the live list (KTD13).
+  const activeHintUses = hintUses.filter((h) => hints.some((x) => x.id === h.caseItemId));
+  const labelOf = new Map((c?.nodes ?? []).map((n) => [n.key, n.label]));
+  const label = (key: string | null) => (key ? (labelOf.get(key) ?? "(removed node)") : null);
+  const guidance = (f: (typeof items)[number]): FactGuidance | null => {
+    const coverFirst = parseKeyList(f.gatePrereqKeys).map((k) => label(k)!);
+    const g = { category: f.category, node: label(f.nodeKey), coverFirst, trigger: f.gateTrigger, antiLeak: f.gateAntiLeak, nudge: f.gateNudge };
+    return g.category || g.node || coverFirst.length || g.trigger || g.antiLeak || g.nudge ? g : null;
+  };
   const role = roleOf(s, viewerId);
   const summary = c ? { id: c.id, title: c.title, caseType: c.caseType, difficulty: c.difficulty } : null;
 
@@ -290,19 +299,28 @@ export async function buildView(db: Db, sessionId: string, viewerId: string, con
     poolLocked: locked,
     gateFor: gateUser ? toPerson(gateUser) : null,
     pendingInvite: pending ? { inviteId: pending.id, to: toPerson(pending.to) } : null,
-    hintsUsedCount: hintUses.length,
+    hintsUsedCount: activeHintUses.length,
     hintsTotal: hints.length,
     interviewer:
       inCase && role === "interviewer" && c
         ? {
             ...summary!,
             problemStatement: c.problemStatement,
-            facts: facts.map((f) => ({ id: f.id, text: f.text, revealedAt: revealedAt.get(f.id) ?? null })),
+            facts: facts.map((f) => ({ id: f.id, text: f.text, revealedAt: revealedAt.get(f.id) ?? null, guidance: guidance(f) })),
             hints: hints.map((h) => ({ id: h.id, text: h.text, usedAt: usedAt.get(h.id) ?? null })),
-            recommendations: items.filter((i) => i.kind === "recommendation").map((i) => ({ id: i.id, text: i.text })),
+            recommendations: items.filter((i) => i.kind === "recommendation").map((i) => ({ id: i.id, text: i.text, category: i.category, target: label(i.nodeKey) })),
             observations: items.filter((i) => i.kind === "observation").map((i) => ({ id: i.id, text: i.text })),
+            given: items.filter((i) => i.kind === "given").map((i) => ({ id: i.id, text: i.text })),
             transcript: (c.transcript ?? []).map((t) => ({ id: t.id, speaker: t.speaker as "interviewer" | "candidate", text: t.text })),
-            tree: (c.nodes ?? []).map((n) => ({ id: n.id, parentId: n.parentId, label: n.label, isCorrectPath: n.isCorrectPath, order: n.order })),
+            tree: (c.nodes ?? []).map((n) => ({
+              id: n.id,
+              parentId: n.parentId,
+              label: n.label,
+              isCorrectPath: n.isCorrectPath,
+              order: n.order,
+              status: n.status as "ACTIVE_BRANCH" | "ELIMINATED_BRANCH" | "ROOT_CAUSE",
+              formula: n.formula,
+            })),
           }
         : null,
     interviewee:
@@ -318,7 +336,7 @@ export async function buildView(db: Db, sessionId: string, viewerId: string, con
               .map((h) => ({ h, i: hints.find((x) => x.id === h.caseItemId) }))
               .filter((x) => x.i)
               .map(({ h, i }) => ({ id: i!.id, text: i!.text, usedAt: h.usedAt.toISOString() })),
-            hintsRemaining: Math.max(0, hints.length - hintUses.length),
+            hintsRemaining: Math.max(0, hints.length - activeHintUses.length),
             notepad: note?.content ?? "",
           }
         : null,
@@ -327,4 +345,14 @@ export async function buildView(db: Db, sessionId: string, viewerId: string, con
       : null,
     closedBy: s.closedById,
   };
+}
+
+function parseKeyList(json: string | null): string[] {
+  if (!json) return [];
+  try {
+    const v = JSON.parse(json);
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
 }

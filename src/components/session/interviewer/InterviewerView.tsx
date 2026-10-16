@@ -8,6 +8,7 @@ import { toast } from "@/components/ui/Toast";
 import { cn } from "@/lib/cn";
 import type { SessionView } from "@/lib/realtime/events";
 import { emitAck } from "@/lib/realtime/socket";
+import { FactGuidance } from "./FactGuidance";
 import { RubricPanel } from "./RubricPanel";
 
 function Section({ title, children, defaultOpen = false, badge }: { title: string; children: React.ReactNode; defaultOpen?: boolean; badge?: React.ReactNode }) {
@@ -42,12 +43,22 @@ export function InterviewerView({ view }: { view: SessionView }) {
           <p className="mb-1 text-xs font-extrabold uppercase tracking-[0.12em] text-royal-bright">Problem statement</p>
           <p className="text-[15px] font-semibold leading-relaxed">{c.problemStatement}</p>
         </div>
+        {c.given.length > 0 && (
+          <Section title="Casebook summary (only you see this)" defaultOpen>
+            <ul className="list-disc space-y-1.5 pl-5 text-[14px]">
+              {c.given.map((g) => (
+                <li key={g.id}>{g.text}</li>
+              ))}
+            </ul>
+          </Section>
+        )}
         <section aria-label="Case facts">
           <h2 className="mb-2 px-1 text-sm font-extrabold uppercase tracking-[0.12em] text-muted">Case facts</h2>
           <ul className="space-y-2">
             {c.facts.map((f) => (
               <li key={f.id} className={cn("rounded-2xl border p-3", f.revealedAt ? "border-emerald/40 bg-emerald-soft" : "border-line bg-surface")}>
                 <p className="text-[14px] leading-snug">{f.text}</p>
+                {f.guidance && <FactGuidance guidance={f.guidance} revealed={Boolean(f.revealedAt)} />}
                 <div className="mt-2 flex justify-end">
                   {f.revealedAt ? (
                     <span className="inline-flex items-center gap-1 text-xs font-extrabold text-emerald">
@@ -87,7 +98,10 @@ export function InterviewerView({ view }: { view: SessionView }) {
         <Section title="Recommendations">
           <ul className="list-disc space-y-1.5 pl-5 text-[14px]">
             {c.recommendations.map((r) => (
-              <li key={r.id}>{r.text}</li>
+              <li key={r.id}>
+                {r.text}
+                {(r.category || r.target) && <span className="block text-xs font-bold text-faint">{[r.category, r.target && `→ ${r.target}`].filter(Boolean).join(" ")}</span>}
+              </li>
             ))}
           </ul>
         </Section>
@@ -108,6 +122,11 @@ export function InterviewerView({ view }: { view: SessionView }) {
           <span className="flex items-center gap-1.5 rounded-full bg-surface/90 px-2.5 py-1">
             <span className="size-2.5 rounded-sm bg-grey-node ring-1 ring-line-strong" /> Standard branch
           </span>
+          {c.tree.some((n) => n.status === "ROOT_CAUSE") && (
+            <span className="flex items-center gap-1.5 rounded-full bg-surface/90 px-2.5 py-1">
+              <span className="size-2.5 rounded-sm border-2 border-amber bg-amber-soft" /> Root cause
+            </span>
+          )}
         </div>
         <LazyIssueTree nodes={c.tree} />
       </section>

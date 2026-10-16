@@ -29,12 +29,32 @@ export type InterviewerCaseView = {
   caseType: string;
   difficulty: number;
   problemStatement: string;
-  facts: Array<{ id: string; text: string; revealedAt: string | null }>;
+  facts: Array<{ id: string; text: string; revealedAt: string | null; guidance: FactGuidance | null }>;
   hints: Array<{ id: string; text: string; usedAt: string | null }>;
-  recommendations: Array<{ id: string; text: string }>;
+  recommendations: Array<{ id: string; text: string; category: string | null; target: string | null }>;
   observations: Array<{ id: string; text: string }>;
+  /** The casebook's summary facts: interviewer only, never revealed. */
+  given: Array<{ id: string; text: string }>;
   transcript: Array<{ id: string; speaker: "interviewer" | "candidate"; text: string }>;
-  tree: Array<{ id: string; parentId: string | null; label: string; isCorrectPath: boolean; order: number }>;
+  tree: Array<{
+    id: string;
+    parentId: string | null;
+    label: string;
+    isCorrectPath: boolean;
+    order: number;
+    status: "ACTIVE_BRANCH" | "ELIMINATED_BRANCH" | "ROOT_CAUSE";
+    formula: string | null;
+  }>;
+};
+
+/** Advisory reveal guidance from the casebank (R26); node keys resolved to labels. */
+export type FactGuidance = {
+  category: string | null;
+  node: string | null;
+  coverFirst: string[];
+  trigger: string | null;
+  antiLeak: string | null;
+  nudge: string | null;
 };
 
 export type IntervieweeCaseView = {

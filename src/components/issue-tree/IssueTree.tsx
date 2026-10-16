@@ -2,27 +2,48 @@
 
 import "@xyflow/react/dist/style.css";
 import { Background, Controls, Handle, Position, ReactFlow, ReactFlowProvider, useReactFlow, type Edge, type Node, type NodeProps } from "@xyflow/react";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, Target } from "lucide-react";
 import { memo, useEffect, useMemo } from "react";
 import { cn } from "@/lib/cn";
-import { layoutTree, NODE_HEIGHT, type TreeNodeData } from "./layout";
+import { layoutTree, type TreeNodeData } from "./layout";
 
-type IssueNodeData = { label: string; correct: boolean; selected: boolean };
+type IssueNodeData = { label: string; correct: boolean; selected: boolean; status: TreeNodeData["status"]; formula: string | null; height: number };
+
+const STATUS_NOTE = { ROOT_CAUSE: "root cause", ELIMINATED_BRANCH: "eliminated branch", ACTIVE_BRANCH: null } as const;
 
 const IssueNode = memo(function IssueNode({ data }: NodeProps<Node<IssueNodeData>>) {
+  const rootCause = data.status === "ROOT_CAUSE";
+  const notes = [data.correct ? "correct issue path" : null, data.status ? STATUS_NOTE[data.status] : null].filter(Boolean);
+  const title = `${data.label}${notes.length ? ` (${notes.join(", ")})` : ""}${data.formula ? `
+${data.formula}` : ""}`;
   return (
     <div
       className={cn(
-        "flex items-center justify-center gap-1.5 rounded-xl border px-3 text-center text-[13px] font-bold leading-tight",
-        data.correct ? "border-royal-bright bg-royal text-white shadow-[0_6px_18px_-8px_#1d4ed8]" : "border-line-strong bg-grey-node text-muted",
+        "flex flex-col items-center justify-center rounded-xl border px-3 text-center text-[13px] font-bold leading-tight",
+        // Root cause uses border and tint; the amber ring stays reserved for the selected node.
+        rootCause
+          ? "border-2 border-amber bg-amber-soft text-ink"
+          : data.correct
+            ? "border-royal-bright bg-royal text-white shadow-[0_6px_18px_-8px_#1d4ed8]"
+            : "border-line-strong bg-grey-node text-muted",
         data.selected && "ring-2 ring-amber ring-offset-2 ring-offset-obsidian",
       )}
-      style={{ height: NODE_HEIGHT, width: "100%" }}
-      title={data.correct ? `${data.label} (correct issue path)` : data.label}
+      style={{ height: data.height, width: "100%" }}
+      title={title}
     >
       <Handle type="target" position={Position.Top} className="!size-1.5 !border-0 !bg-transparent" isConnectable={false} />
-      {data.correct && <CheckCircle2 size={14} className="shrink-0" aria-label="On the correct path" />}
-      <span className="line-clamp-2">{data.label}</span>
+      <span className="flex items-center gap-1.5">
+        {rootCause ? (
+          <Target size={14} className="shrink-0 text-amber" aria-label="Root cause" />
+        ) : (
+          data.correct && <CheckCircle2 size={14} className="shrink-0" aria-label="On the correct path" />
+        )}
+        <span className="line-clamp-2">
+          {data.label}
+          {rootCause && <span className="sr-only"> (root cause)</span>}
+        </span>
+      </span>
+      {data.formula && <span className="mt-0.5 block max-w-full truncate text-[11px] font-semibold opacity-80">{data.formula}</span>}
       <Handle type="source" position={Position.Bottom} className="!size-1.5 !border-0 !bg-transparent" isConnectable={false} />
     </div>
   );
@@ -48,7 +69,7 @@ function Flow({ nodes, selectedId, onSelectNode, onRenameNode, fitKey }: IssueTr
       id: n.id,
       type: "issue",
       position: { x: n.x, y: n.y },
-      data: { label: n.label || "Untitled", correct: n.isCorrectPath, selected: n.id === selectedId },
+      data: { label: n.label || "Untitled", correct: n.isCorrectPath, selected: n.id === selectedId, status: n.status, formula: n.formula ?? null, height: n.height },
       style: { width: n.width },
       draggable: false,
       connectable: false,
