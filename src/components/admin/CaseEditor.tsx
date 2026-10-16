@@ -14,17 +14,28 @@ import type { TreeNodeData } from "@/components/issue-tree/layout";
 import { cn } from "@/lib/cn";
 import { splitTranscript, type Turn } from "@/lib/transcript";
 import { CASE_TYPES, DIFFICULTIES, DIFFICULTY_LABEL } from "@/lib/types";
+import { FactFields } from "./FactFields";
 import { Field, inputCls, move, OrderedListEditor, type ListItem } from "./fields";
 import { TreeBuilder } from "./TreeBuilder";
 
-type Meta = { id: string; title: string; caseType: string; difficulty: number; problemStatement: string; published: boolean };
-type Lists = Record<"fact" | "hint" | "recommendation" | "observation", ListItem[]>;
+type Meta = {
+  id: string;
+  title: string;
+  caseType: string;
+  difficulty: number;
+  problemStatement: string;
+  published: boolean;
+  externalId?: string | null;
+  industry?: string | null;
+};
+type Lists = Record<"fact" | "hint" | "recommendation" | "observation" | "given", ListItem[]>;
 
 const LIST_LABELS: Record<keyof Lists, string> = {
   fact: "Case facts (each gets Reveal to Candidate)",
   hint: "Hints / directional nudges (I'm Stuck, in order)",
   recommendation: "Recommendations",
-  observation: "Observations",
+  observation: "Observations / takeaways",
+  given: "Casebook summary (interviewer only)",
 };
 
 export function CaseEditor({ meta, lists, transcript, tree }: { meta: Meta; lists: Lists; transcript: Turn[]; tree: TreeNodeData[] }) {
@@ -34,7 +45,7 @@ export function CaseEditor({ meta, lists, transcript, tree }: { meta: Meta; list
         <ArrowLeft size={16} aria-hidden /> All cases
       </Link>
       <MetaCard meta={meta} />
-      <ListsCard caseId={meta.id} initial={lists} />
+      <ListsCard caseId={meta.id} initial={lists} tree={tree} />
       <TreeBuilder caseId={meta.id} initial={tree} />
       <TranscriptCard caseId={meta.id} initial={transcript} />
     </div>
@@ -48,7 +59,15 @@ function MetaCard({ meta }: { meta: Meta }) {
   const router = useRouter();
   return (
     <Card className="p-6">
-      <h2 className="mb-4 text-lg font-extrabold">Case details</h2>
+      <h2 className="mb-1 text-lg font-extrabold">Case details</h2>
+      {meta.externalId ? (
+        <p className="mb-4 text-sm text-faint">
+          Imported from the casebank as {meta.externalId}
+          {meta.industry ? ` · ${meta.industry}` : ""}. Re-importing the file overwrites edits to imported fields.
+        </p>
+      ) : (
+        <div className="mb-3" />
+      )}
       <div className="grid gap-4">
         <Field label="Title">
           <input className={inputCls} value={m.title} onChange={(e) => setM({ ...m, title: e.target.value })} />
@@ -120,14 +139,14 @@ function MetaCard({ meta }: { meta: Meta }) {
   );
 }
 
-function ListsCard({ caseId, initial }: { caseId: string; initial: Lists }) {
+function ListsCard({ caseId, initial, tree }: { caseId: string; initial: Lists; tree: TreeNodeData[] }) {
   const [lists, setLists] = useState(initial);
   const [pending, start] = useTransition();
   const router = useRouter();
   const save = () =>
     start(async () => {
       for (const kind of Object.keys(lists) as Array<keyof Lists>) {
-        const r = await saveCaseItemsAction(caseId, kind, lists[kind].map((i) => ({ id: i.id, text: i.text })));
+        const r = await saveCaseItemsAction(caseId, kind, lists[kind]);
         if (!r.ok) return toast(`${LIST_LABELS[kind]}: ${r.error}`, "warning");
         setLists((l) => ({ ...l, [kind]: r.items }));
       }
@@ -139,9 +158,16 @@ function ListsCard({ caseId, initial }: { caseId: string; initial: Lists }) {
       <h2 className="mb-4 text-lg font-extrabold">Facts, hints, recommendations &amp; observations</h2>
       <div className="grid gap-6 lg:grid-cols-2">
         {(Object.keys(LIST_LABELS) as Array<keyof Lists>).map((k) => (
-          <OrderedListEditor key={k} label={LIST_LABELS[k]} items={lists[k]} onChange={(v) => setLists((l) => ({ ...l, [k]: v }))} />
+          <OrderedListEditor
+            key={k}
+            label={LIST_LABELS[k]}
+            items={lists[k]}
+            onChange={(v) => setLists((l) => ({ ...l, [k]: v }))}
+            renderExtra={k === "fact" || k === "recommendation" ? (item, update) => <FactFields item={item} update={update} tree={tree} kind={k} /> : undefined}
+          />
         ))}
       </div>
+      <p className="mt-3 text-xs text-faint">Node choices come from the saved tree. Save the tree first when you add nodes.</p>
       <Button className="mt-5" disabled={pending} onClick={save}>
         Save lists
       </Button>

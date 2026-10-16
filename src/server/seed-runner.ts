@@ -81,6 +81,8 @@ export async function writeTree(tx: Tx, caseId: string, nodes: TreeNodeInput[]) 
           key: node.key,
           label: node.label,
           isCorrectPath: node.isCorrectPath,
+          status: node.status ?? "ACTIVE_BRANCH",
+          formula: node.formula ?? null,
           order,
         },
       });
@@ -88,6 +90,8 @@ export async function writeTree(tx: Tx, caseId: string, nodes: TreeNodeInput[]) 
       pending.splice(i, 1);
     }
   }
+  // A node whose parent key never resolves would silently vanish; the importer calls this directly (KTD11).
+  if (pending.length) throw new Error(`Tree node "${pending[0].label}" points to a missing parent`);
   return ids;
 }
 

@@ -1,6 +1,15 @@
 import dagre from "@dagrejs/dagre";
 
-export type TreeNodeData = { id: string; parentId: string | null; label: string; isCorrectPath: boolean; order: number };
+/** `id`/`parentId` are the node's stable keys (KTD11). */
+export type TreeNodeData = {
+  id: string;
+  parentId: string | null;
+  label: string;
+  isCorrectPath: boolean;
+  order: number;
+  status?: "ACTIVE_BRANCH" | "ELIMINATED_BRANCH" | "ROOT_CAUSE";
+  formula?: string | null;
+};
 export type PositionedNode = TreeNodeData & { x: number; y: number; width: number; height: number };
 export type TreeEdge = { id: string; source: string; target: string; correct: boolean };
 

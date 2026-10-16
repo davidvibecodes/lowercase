@@ -24,16 +24,37 @@ export function move<T>(list: T[], i: number, dir: -1 | 1): T[] {
   return out;
 }
 
-export type ListItem = { id: string | null; text: string };
+export type ListItem = {
+  id: string | null;
+  text: string;
+  category?: string | null;
+  nodeKey?: string | null;
+  gatePrereqKeys?: string[];
+  gateTrigger?: string | null;
+  gateAntiLeak?: string | null;
+  gateNudge?: string | null;
+};
 
-/** Ordered list of short text items (facts, hints, recommendations, observations). Ids travel with their text. */
-export function OrderedListEditor({ label, items, onChange, placeholder }: { label: string; items: ListItem[]; onChange: (v: ListItem[]) => void; placeholder?: string }) {
+/** Ordered list of short text items (facts, hints, recommendations, observations). Ids and extra fields travel with their text. */
+export function OrderedListEditor({
+  label,
+  items,
+  onChange,
+  placeholder,
+  renderExtra,
+}: {
+  label: string;
+  items: ListItem[];
+  onChange: (v: ListItem[]) => void;
+  placeholder?: string;
+  renderExtra?: (item: ListItem, update: (p: Partial<ListItem>) => void) => React.ReactNode;
+}) {
   return (
     <fieldset>
       <legend className="mb-2 text-sm font-bold text-muted">{label}</legend>
       <ol className="space-y-2">
         {items.map((t, i) => (
-          <li key={t.id ?? `new-${i}`} className="flex items-start gap-2">
+          <li key={t.id ?? `new-${i}`} className="flex flex-wrap items-start gap-2">
             <span className="mt-2.5 w-5 text-right text-sm font-bold tabular-nums text-faint">{i + 1}</span>
             <textarea
               aria-label={`${label} ${i + 1}`}
@@ -54,6 +75,7 @@ export function OrderedListEditor({ label, items, onChange, placeholder }: { lab
                 <Trash2 size={14} />
               </button>
             </div>
+            {renderExtra && <div className="basis-full pl-7">{renderExtra(t, (p) => onChange(items.map((x, j) => (j === i ? { ...x, ...p } : x))))}</div>}
           </li>
         ))}
       </ol>

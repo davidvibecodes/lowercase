@@ -21,4 +21,12 @@ describe("validateTree", () => {
     expect(r.errors).toEqual([]);
     expect(r.warnings).toEqual(['Correct path is broken at "Revenue"']);
   });
+  it("rejects duplicate or empty keys instead of collapsing them", () => {
+    expect(validateTree([n("a", null, "Profit"), n("a", "a", "Revenue")]).errors).toContain("Two nodes share the key \"a\"");
+    expect(validateTree([n("", null, "Profit")]).errors).toContain("Every node needs a key");
+  });
+  it("rejects a tree that drops a node something still points at", () => {
+    const r = validateTree([n("a", null, "Profit"), n("b", "a", "Revenue")], [{ label: "Fact about cost", keys: ["c"] }, { label: "Fact about revenue", keys: ["b"] }]);
+    expect(r.errors).toEqual(['"Fact about cost" points at a node this tree no longer has. Re-point it first.']);
+  });
 });

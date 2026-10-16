@@ -9,10 +9,20 @@ import { Card } from "@/components/ui/Card";
 import { toast } from "@/components/ui/Toast";
 import { saveTreeAction } from "@/app/(app)/admin/cases/actions";
 import { validateTree } from "@/lib/rules/tree";
+import { NODE_STATUSES } from "@/lib/types";
 import { inputCls } from "./fields";
 
 let seq = 0;
-const newId = () => `new_${Date.now().toString(36)}_${seq++}`;
+/** A node's key is stable once saved (KTD11); new nodes get a fresh one. */
+const newId = () => `n_${Date.now().toString(36)}_${seq++}`;
+
+const STATUS_LABEL: Record<(typeof NODE_STATUSES)[number], string> = {
+  ACTIVE_BRANCH: "Active branch",
+  ELIMINATED_BRANCH: "Eliminated branch",
+  ROOT_CAUSE: "Root cause",
+};
+
+const toInput = (n: TreeNodeData) => ({ key: n.id, parentKey: n.parentId, label: n.label, isCorrectPath: n.isCorrectPath, status: n.status ?? "ACTIVE_BRANCH", formula: n.formula ?? null });
 
 function descendants(nodes: TreeNodeData[], id: string): Set<string> {
   const out = new Set([id]);
@@ -37,7 +47,7 @@ export function TreeBuilder({ caseId, initial }: { caseId: string; initial: Tree
   const [pending, start] = useTransition();
   const labelRef = useRef<HTMLInputElement>(null);
   const sel = nodes.find((n) => n.id === selected) ?? null;
-  const check = useMemo(() => validateTree(nodes.map((n) => ({ key: n.id, parentKey: n.parentId, label: n.label, isCorrectPath: n.isCorrectPath }))), [nodes]);
+  const check = useMemo(() => validateTree(nodes.map(toInput)), [nodes]);
 
   const addRoot = () => {
     const id = newId();
@@ -62,10 +72,7 @@ export function TreeBuilder({ caseId, initial }: { caseId: string; initial: Tree
 
   const save = () =>
     start(async () => {
-      const r = await saveTreeAction(
-        caseId,
-        nodes.map((n) => ({ key: n.id, parentKey: n.parentId, label: n.label, isCorrectPath: n.isCorrectPath })),
-      );
+      const r = await saveTreeAction(caseId, nodes.map(toInput));
       if (!r.ok) return toast(r.error, "warning");
       toast(r.warnings.length ? `Tree saved with ${r.warnings.length} warning(s)` : "Tree saved", r.warnings.length ? "warning" : "success");
     });
@@ -104,6 +111,31 @@ export function TreeBuilder({ caseId, initial }: { caseId: string; initial: Tree
             <Button size="sm" variant={sel.isCorrectPath ? "primary" : "secondary"} aria-pressed={sel.isCorrectPath} onClick={() => patch({ isCorrectPath: !sel.isCorrectPath })}>
               <CheckCircle2 size={16} aria-hidden /> {sel.isCorrectPath ? "Correct Issue Path" : "Standard Branch"}
             </Button>
+            <label className="sr-only" htmlFor="node-status">
+              Node status
+            </label>
+            <select
+              id="node-status"
+              className={`${inputCls} w-auto py-1.5 text-sm`}
+              value={sel.status ?? "ACTIVE_BRANCH"}
+              onChange={(e) => patch({ status: e.target.value as TreeNodeData["status"] })}
+            >
+              {NODE_STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {STATUS_LABEL[s]}
+                </option>
+              ))}
+            </select>
+            <label className="sr-only" htmlFor="node-formula">
+              Formula or framework
+            </label>
+            <input
+              id="node-formula"
+              className={`${inputCls} max-w-[16rem] py-1.5 text-sm`}
+              placeholder="Formula, e.g. Revenue = P × Q"
+              value={sel.formula ?? ""}
+              onChange={(e) => patch({ formula: e.target.value || null })}
+            />
             <Button size="sm" variant="ghost" onClick={remove}>
               <Trash2 size={16} className="text-amber" aria-hidden /> Delete subtree
             </Button>

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import type { Db } from "@/lib/db";
 import { validateTree } from "@/lib/rules/tree";
-import { caseInput, CASE_ITEM_KINDS, transcriptTurnInput, treeNodeInput, type CaseItemKind } from "@/lib/types";
+import { caseInput, caseItemInput, CASE_ITEM_KINDS, transcriptTurnInput, treeNodeInput, type CaseItemKind } from "@/lib/types";
 import { writeTree } from "@/server/seed-runner";
 import { parseInput, ServiceError } from "./invites";
 
@@ -33,28 +33,89 @@ export async function updateCaseMeta(db: Db, id: string, input: unknown) {
   await db.case.update({ where: { id }, data: parse(caseInput, input) });
 }
 
-const itemsInput = z.array(z.object({ id: z.string().nullable(), text: z.string().trim().min(1, "Items can't be empty") }));
+const itemsInput = z.array(caseItemInput);
+
+/** Kinds that carry casebank fields; other lists store text only. */
+const RICH_KINDS: Partial<Record<CaseItemKind, "fact" | "recommendation">> = { fact: "fact", recommendation: "recommendation" };
+
+export type SavedCaseItem = {
+  id: string;
+  text: string;
+  category: string | null;
+  nodeKey: string | null;
+  gatePrereqKeys: string[];
+  gateTrigger: string | null;
+  gateAntiLeak: string | null;
+  gateNudge: string | null;
+};
+
+export function toSavedItem(i: { id: string; text: string; category: string | null; nodeKey: string | null; gatePrereqKeys: string | null; gateTrigger: string | null; gateAntiLeak: string | null; gateNudge: string | null }): SavedCaseItem {
+  return { ...i, gatePrereqKeys: parseKeys(i.gatePrereqKeys) };
+}
+
+function parseKeys(json: string | null): string[] {
+  if (!json) return [];
+  try {
+    const v = JSON.parse(json);
+    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
+  } catch {
+    return [];
+  }
+}
+
+/** Every live fact and recommendation that points into the tree, for validateTree (R25). */
+async function treeReferences(db: Db, caseId: string) {
+  const items = await db.caseItem.findMany({
+    where: { caseId, archivedAt: null, kind: { in: ["fact", "recommendation"] } },
+    select: { text: true, nodeKey: true, gatePrereqKeys: true },
+  });
+  return items
+    .map((i) => ({ label: i.text.length > 60 ? `${i.text.slice(0, 57)}...` : i.text, keys: [...(i.nodeKey ? [i.nodeKey] : []), ...parseKeys(i.gatePrereqKeys)] }))
+    .filter((r) => r.keys.length > 0);
+}
 
 /**
  * Saves one ordered list (facts, hints, …) by diffing ids: edits update in
  * place, new items insert, removed items are archived (not deleted) so past
- * reveal and hint records stay valid (U15).
+ * reveal and hint records stay valid (U15). Facts and recommendations also
+ * save their casebank fields; their node keys must exist in the tree.
  */
-export async function saveCaseItems(db: Db, caseId: string, kind: string, input: unknown) {
+export async function saveCaseItems(db: Db, caseId: string, kind: string, input: unknown): Promise<SavedCaseItem[]> {
   if (!CASE_ITEM_KINDS.includes(kind as CaseItemKind)) throw new ServiceError("Unknown list");
   const items = parse(itemsInput, input);
+  const rich = RICH_KINDS[kind as CaseItemKind];
+  if (rich) {
+    const keys = new Set((await db.issueTreeNode.findMany({ where: { caseId }, select: { key: true } })).map((n) => n.key));
+    for (const item of items) {
+      const refs = [...(item.nodeKey ? [item.nodeKey] : []), ...(item.gatePrereqKeys ?? [])];
+      const missing = refs.find((k) => !keys.has(k));
+      if (missing) throw new ServiceError(`"${item.text.slice(0, 40)}" points at a node that isn't in the tree`);
+    }
+  }
+  const fields = (item: (typeof items)[number]) =>
+    rich
+      ? {
+          category: item.category || null,
+          nodeKey: item.nodeKey || null,
+          gatePrereqKeys: rich === "fact" && item.gatePrereqKeys?.length ? JSON.stringify(item.gatePrereqKeys) : null,
+          gateTrigger: rich === "fact" ? item.gateTrigger || null : null,
+          gateAntiLeak: rich === "fact" ? item.gateAntiLeak || null : null,
+          gateNudge: rich === "fact" ? item.gateNudge || null : null,
+        }
+      : {};
   const existing = await db.caseItem.findMany({ where: { caseId, kind, archivedAt: null } });
   const keep = new Set(items.filter((i) => i.id).map((i) => i.id!));
   await db.$transaction([
     ...existing.filter((e) => !keep.has(e.id)).map((e) => db.caseItem.update({ where: { id: e.id }, data: { archivedAt: new Date() } })),
     ...items.map((item, order) =>
       item.id && existing.some((e) => e.id === item.id)
-        ? db.caseItem.update({ where: { id: item.id }, data: { text: item.text, order } })
-        : db.caseItem.create({ data: { caseId, kind, text: item.text, order } }),
+        ? db.caseItem.update({ where: { id: item.id }, data: { text: item.text, order, ...fields(item) } })
+        : db.caseItem.create({ data: { caseId, kind, text: item.text, order, ...fields(item) } }),
     ),
   ]);
   // The saved list with real ids, so the editor's next save updates rather than re-creates.
-  return db.caseItem.findMany({ where: { caseId, kind, archivedAt: null }, orderBy: { order: "asc" }, select: { id: true, text: true } });
+  const saved = await db.caseItem.findMany({ where: { caseId, kind, archivedAt: null }, orderBy: { order: "asc" } });
+  return saved.map(toSavedItem);
 }
 
 export async function saveTranscript(db: Db, caseId: string, input: unknown) {
@@ -68,7 +129,7 @@ export async function saveTranscript(db: Db, caseId: string, input: unknown) {
 /** Replaces the tree in one transaction (KTD7). Returns non-blocking warnings. */
 export async function saveTree(db: Db, caseId: string, input: unknown) {
   const nodes = parse(z.array(treeNodeInput), input);
-  const check = validateTree(nodes);
+  const check = validateTree(nodes, await treeReferences(db, caseId));
   if (check.errors.length) throw new ServiceError(check.errors[0]);
   await db.$transaction(async (tx) => {
     await tx.issueTreeNode.deleteMany({ where: { caseId } });

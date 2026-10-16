@@ -75,8 +75,23 @@ export const treeNodeInput = z.object({
   parentKey: z.string().nullable(),
   label: z.string(),
   isCorrectPath: z.boolean(),
+  status: z.enum(NODE_STATUSES).default("ACTIVE_BRANCH"),
+  formula: z.string().trim().max(200).nullable().optional(),
 });
-export type TreeNodeInput = z.infer<typeof treeNodeInput>;
+export type TreeNodeInput = z.input<typeof treeNodeInput>;
+
+/** One CMS list item. Facts and recommendations carry casebank fields; references are stable tree keys (KTD11). */
+export const caseItemInput = z.object({
+  id: z.string().nullable(),
+  text: z.string().trim().min(1, "Items can't be empty").max(2000),
+  category: z.string().trim().max(80).nullable().optional(),
+  nodeKey: z.string().trim().max(64).nullable().optional(),
+  gatePrereqKeys: z.array(z.string().max(64)).max(20).nullable().optional(),
+  gateTrigger: z.string().trim().max(1000).nullable().optional(),
+  gateAntiLeak: z.string().trim().max(1000).nullable().optional(),
+  gateNudge: z.string().trim().max(1000).nullable().optional(),
+});
+export type CaseItemInput = z.input<typeof caseItemInput>;
 
 export const transcriptTurnInput = z.object({ speaker: z.enum(SPEAKERS), text: z.string().trim().min(1) });
 
