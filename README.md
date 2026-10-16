@@ -9,7 +9,9 @@ npm install
 npm run dev
 ```
 
-On the first run, `scripts/ensure-db.ts` writes `.env` (a random `AUTH_SECRET` and `AUTH_MODE=dev`), applies migrations and seeds `prisma/dev.db`. Open http://localhost:3000 and click **Continue as davidsathyandevice (User + Admin)**.
+On the first run, `scripts/ensure-db.ts` writes `.env` (a random `AUTH_SECRET` and `AUTH_MODE=dev`), applies migrations and seeds `prisma/dev.db`. Open http://localhost:3000 and click **Continue with Google** (set it up first, see below). Before Google is set up, the **Testing** section signs you in as a seeded account without admin.
+
+Before it applies new migrations to a database that has users, `ensure-db` saves a copy to `prisma/backups/`. If a migration ever fails, stop every server, copy the newest backup over `prisma/dev.db`, delete `prisma/dev.db-wal` and `prisma/dev.db-shm`, and check out the commit before the new migration.
 
 For the production build:
 
@@ -18,7 +20,7 @@ npm run build
 npm run start
 ```
 
-The server listens on loopback only (`127.0.0.1:3000`), so the passwordless test login can't be reached from your network.
+The server listens on loopback only (`127.0.0.1:3000`) and answers only to `localhost` and `127.0.0.1`, so the passwordless test login can't be reached from your network or from a page on another hostname.
 
 ## Google sign-in
 
@@ -34,11 +36,25 @@ Everyone signs in with **Continue with Google**. Until a Google client is config
 
 Google deletes an OAuth client that has no sign-ins for 6 months. If sign-in suddenly fails with a setup error, check the client still exists.
 
-The admin CMS opens only for a Google session on `davidsathyandevice@gmail.com`. The local test login never grants admin.
+The admin CMS opens only for a Google session on `davidsathyandevice@gmail.com`. The local test login never grants admin, and it stops offering an account once that account has signed in with Google.
 
-## Two users in one browser
+New accounts choose a unique username before they can use the app. Usernames are 3–20 characters (a–z, digits, dots and underscores, starting with a letter), compared without case, and can't be changed later.
 
-Cookies are scoped by host, not port, so `localhost:3000` and `127.0.0.1:3000` hold separate sessions. On the login page, **Open as Online Friend / Peer Tester** opens Roy C, Mihaela D or Ankit S on the other hostname in a new tab. Both tabs stay signed in, and invites, presence and live sessions work between them. An incognito window also works.
+### Practising with a friend at your computer
+
+The app runs on your machine only. A friend signs in with their own Google account in a **private window**, and closes it after the session, never in your browser profile. Google sign-in uses one host, so two Google users need separate cookie jars, and a shared profile would offer your admin Google account in the account chooser.
+
+## Two users in one browser (testing)
+
+Cookies are scoped by host, not port, so `localhost:3000` and `127.0.0.1:3000` hold separate sessions. On the login page, **Open as Online Friend / Peer Tester** opens Roy C, Mihaela D or Ankit S on the other hostname in a new tab, where one click signs them in with the test login. Both tabs stay signed in, and invites, presence and live sessions work between them.
+
+## Friends & Groups
+
+There's no list of everyone who signed up. Find people by their **exact** username in **Search**, then send a friend request; they accept or decline it under **Received**, and you can cancel it under **Sent**. Start Session works between accepted friends who are online. Groups are found by name; creating a group sends invites to the friends you pick.
+
+## Importing a casebank
+
+Admin → Cases → **Import casebank** takes a schema 2.0.0 casebank JSON file. You see a preview (cases to create or update, with counts) before anything is saved, then each case's result. Importing the same file again updates those cases in place and keeps session history; it overwrites CMS edits to imported items. A case with a session in progress is skipped. In a live session the interviewer sees each fact's reveal guidance (when to reveal, what to cover first, what not to leak, and a nudge if the candidate skips it). The candidate never sees it. Keep casebank files out of git, for example in the ignored `content/private/` folder.
 
 ## Scripts
 

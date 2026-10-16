@@ -1,3 +1,4 @@
+import { resolve } from "node:path";
 import { expect, test } from "@playwright/test";
 import { loginOwner } from "./helpers";
 
@@ -45,3 +46,22 @@ test("the issue tree builder opens the Mumbai tree with 19 nodes", async ({ brow
   await expect(page.locator(".react-flow__node")).toHaveCount(19);
   await ctx.close();
 });
+
+test("the owner imports a casebank: preview, confirm, then the case runs with guidance (R24, R26)", async ({ browser }) => {
+  const { ctx, page } = await loginOwner(browser);
+  await page.goto("/admin/cases");
+  await page.getByRole("link", { name: "Import casebank" }).click();
+  await page.locator("#casebank-file").setInputFiles(resolve(import.meta.dirname, "../fixtures/casebank-sample.json"));
+  await expect(page.getByRole("heading", { name: "Preview" })).toBeVisible();
+  await expect(page.getByText("2 to create, 0 to update")).toBeVisible();
+  await page.getByRole("button", { name: "Confirm import" }).click();
+  await expect(page.getByRole("heading", { name: "Result" })).toBeVisible();
+  await expect(page.getByText("Applied")).toHaveCount(2);
+
+  await page.goto("/admin/cases");
+  await page.getByRole("listitem").filter({ hasText: "Corner Bakery" }).getByRole("link", { name: "Edit" }).click();
+  await expect(page.getByText("Imported from the casebank as SAMPLE_001")).toBeVisible();
+  await expect(page.getByText("4 nodes")).toBeVisible();
+  await ctx.close();
+});
+
