@@ -31,7 +31,7 @@ export function LoginForm({ initialError, peers }: { initialError?: string; peer
           </p>
         )}
         <Button type="submit" size="lg" block disabled={pending}>
-          Continue as {OWNER} (User + Admin)
+          Continue as {OWNER} (test login, no admin)
           <ArrowRight size={18} aria-hidden />
         </Button>
       </form>

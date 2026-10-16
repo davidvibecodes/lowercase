@@ -31,8 +31,8 @@ export async function startHarness(): Promise<Harness> {
 }
 
 /** Connects as a user; resolves once connected (rejects on auth failure). */
-export function connectAs(h: Harness, userId: string | null, before?: (c: Client) => void): Promise<Client> {
-  const headers: Record<string, string> = userId ? { cookie: `lc_session=${encodeURIComponent(createSessionValue(userId))}` } : {};
+export function connectAs(h: Harness, userId: string | null, before?: (c: Client) => void, extra: Record<string, string> = {}): Promise<Client> {
+  const headers: Record<string, string> = { ...(userId ? { cookie: `lc_session=${encodeURIComponent(createSessionValue(userId, "dev"))}` } : {}), ...extra };
   const c: Client = connect(h.url, { transports: ["websocket"], extraHeaders: headers, reconnection: false, forceNew: true, autoConnect: false });
   h.clients.push(c);
   before?.(c);

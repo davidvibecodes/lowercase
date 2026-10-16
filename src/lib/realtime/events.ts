@@ -112,4 +112,4 @@ export type ClientToServerEvents = {
   "session:close": (p: { sessionId: string }, ack: Ack) => void;
 };
 
-export type SocketData = { userId: string };
+export type SocketData = { userId: string; method: "google" | "dev" };

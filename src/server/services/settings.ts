@@ -4,17 +4,15 @@ import { GATE_MODES, type GateMode } from "@/lib/types";
 import { resetUserProgress } from "@/server/seed-runner";
 import { parseInput, ServiceError } from "./invites";
 
+/** Email comes from the Google account and isn't editable here (R5, KTD5); admin is derived from it. */
 export const accountInput = z.object({
   firstName: z.string().trim().min(1, "First name is required").max(40),
   lastName: z.string().trim().min(1, "Last name is required").max(40),
-  email: z.string().trim().email("Enter a valid email"),
 });
 
 export async function updateAccount(db: Db, userId: string, input: unknown) {
   const data = parseInput(accountInput, input);
-  const clash = await db.user.findFirst({ where: { email: data.email, id: { not: userId } } });
-  if (clash) throw new ServiceError("That email is already in use");
-  await db.user.update({ where: { id: userId }, data });
+  await db.user.update({ where: { id: userId }, data: { firstName: data.firstName, lastName: data.lastName } });
 }
 
 export async function updatePreferences(db: Db, userId: string, prefs: { soundOn?: boolean; reducedMotion?: boolean }) {

@@ -9,6 +9,8 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const user = await getCurrentUser();
   if (!user) return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  // R7: route handlers skip the layout, so the onboarding gate is checked here too.
+  if (!user.username) return NextResponse.json({ error: "Choose a username first" }, { status: 403 });
   const data = await exportUserData(db, user.id);
   return new NextResponse(JSON.stringify(data, null, 2), {
     headers: {

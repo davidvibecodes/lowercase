@@ -35,7 +35,7 @@ function useAction() {
 }
 
 export function AccountForm({ user }: { user: { firstName: string; lastName: string; email: string; username: string } }) {
-  const [form, setForm] = useState(user);
+  const [form, setForm] = useState({ firstName: user.firstName, lastName: user.lastName });
   const { pending, go } = useAction();
   return (
     <Card className="mt-6 p-6">
@@ -58,7 +58,10 @@ export function AccountForm({ user }: { user: { firstName: string; lastName: str
         </label>
         <label className="text-sm font-bold text-muted sm:col-span-2">
           Email
-          <input className={input} type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          <input className={`${input} cursor-not-allowed opacity-70`} type="email" value={user.email} readOnly aria-describedby="email-source" />
+          <span id="email-source" className="mt-1 block text-xs font-semibold text-faint">
+            From your Google account
+          </span>
         </label>
         <div className="sm:col-span-2">
           <Button type="submit" disabled={pending}>

@@ -9,8 +9,9 @@ import { ServiceError } from "@/server/services/invites";
 export type CaseResult<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
 async function run<T extends object>(fn: () => Promise<T | void>): Promise<CaseResult<T>> {
-  await assertAdmin();
   try {
+    // Inside the try: a ServiceError("Not authorized") becomes { ok: false } (R13).
+    await assertAdmin();
     const out = (await fn()) ?? ({} as T);
     revalidatePath("/admin/cases", "layout");
     return { ok: true, ...out };

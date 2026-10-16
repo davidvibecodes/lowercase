@@ -18,7 +18,7 @@ async function run(fn: () => Promise<unknown>): Promise<SettingsResult> {
   }
 }
 
-export async function updateAccountAction(input: { firstName: string; lastName: string; email: string }) {
+export async function updateAccountAction(input: { firstName: string; lastName: string }) {
   const u = await requireUser();
   return run(() => settings.updateAccount(db, u.id, input));
 }
@@ -29,8 +29,10 @@ export async function updatePreferencesAction(prefs: { soundOn?: boolean; reduce
 }
 
 export async function setGateModeAction(mode: string) {
-  const u = await assertAdmin();
-  return run(() => settings.setGateMode(db, u.id, mode));
+  return run(async () => {
+    const u = await assertAdmin();
+    await settings.setGateMode(db, u.id, mode);
+  });
 }
 
 export async function resetMasteryAction() {

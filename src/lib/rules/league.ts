@@ -2,12 +2,13 @@ import { weekdayIndex } from "@/lib/dates";
 
 export const ADVANCE_CUTOFF = 15;
 
-export type LeagueMember = { id: string; username: string; name: string; weeklyXp: number };
+/** Display name and XP only: league rows never carry a username (KTD10). */
+export type LeagueMember = { id: string; name: string; weeklyXp: number };
 export type Standing = LeagueMember & { rank: number; advancing: boolean };
 
 export function leagueStandings(members: LeagueMember[]): Standing[] {
   return [...members]
-    .sort((a, b) => b.weeklyXp - a.weeklyXp || a.username.localeCompare(b.username))
+    .sort((a, b) => b.weeklyXp - a.weeklyXp || a.name.localeCompare(b.name) || a.id.localeCompare(b.id))
     .map((m, i) => ({ ...m, rank: i + 1, advancing: i < ADVANCE_CUTOFF }));
 }
 

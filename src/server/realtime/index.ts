@@ -1,7 +1,9 @@
 import type { Server as HttpServer } from "node:http";
+import type { AddressInfo } from "node:net";
 import { Server } from "socket.io";
 import { sessionValueFromCookieHeader, verifySessionValue } from "@/lib/auth/session-cookie";
 import { db } from "@/lib/db";
+import { isAllowedHost, isAllowedOrigin } from "@/server/loopback";
 import { registerInviteHandlers } from "./invites";
 import { addSocket, isOnline, removeSocket } from "./presence";
 import { registerSessionHandlers, onUserDisconnected } from "./session";
@@ -20,14 +22,22 @@ export function attachRealtime(httpServer: HttpServer): IO {
     serveClient: false,
     pingInterval: 10_000,
     pingTimeout: 8_000,
+    // Socket.IO handles its own requests before server.ts sees them, so it checks Host and Origin itself (KTD16).
+    allowRequest: (req, cb) => {
+      const port = (httpServer.address() as AddressInfo | null)?.port ?? process.env.PORT ?? 3000;
+      cb(null, isAllowedHost(req.headers.host, port) && isAllowedOrigin(req.headers.origin, port));
+    },
   });
 
   io.use(async (socket, next) => {
-    const userId = verifySessionValue(sessionValueFromCookieHeader(socket.handshake.headers.cookie));
-    if (!userId) return next(new Error("unauthorized"));
-    const exists = await db.user.count({ where: { id: userId } });
-    if (!exists) return next(new Error("unauthorized"));
-    socket.data.userId = userId;
+    const session = verifySessionValue(sessionValueFromCookieHeader(socket.handshake.headers.cookie));
+    if (!session) return next(new Error("unauthorized"));
+    const user = await db.user.findUnique({ where: { id: session.userId }, select: { username: true } });
+    if (!user) return next(new Error("unauthorized"));
+    // R7: nobody reaches presence or sessions before choosing a username.
+    if (!user.username) return next(new Error("onboarding_required"));
+    socket.data.userId = session.userId;
+    socket.data.method = session.method;
     next();
   });
 

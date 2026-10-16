@@ -5,16 +5,37 @@ export function devLoginEnabled(): boolean {
   return process.env.AUTH_MODE === "dev";
 }
 
-/** Passwordless test login for seeded users. Refuses unless AUTH_MODE=dev (KTD5). */
+/**
+ * Seeded accounts the test login may sign in as (KTD5). Each is admitted only
+ * while it has never signed in with Google, so a real friend's account can
+ * never be opened by typing their handle.
+ */
+export const DEV_LOGIN_USERNAMES = ["davidsathyandevice", "roy", "mihaela", "ankit"] as const;
+
+/** Passwordless test login for seeded users. Refuses unless AUTH_MODE=dev; never admin. */
 export const devLoginProvider: AuthProvider = {
   id: "dev",
   async signIn({ username }) {
     if (!devLoginEnabled()) return { ok: false, error: "Test login is disabled (AUTH_MODE is not dev)." };
-    const user = await db.user.findUnique({ where: { username: username.trim().toLowerCase() } });
-    if (!user) return { ok: false, error: "No such test user" };
-    return { ok: true, user: toSessionUser(user) };
+    const name = username.trim().toLowerCase();
+    if (!(DEV_LOGIN_USERNAMES as readonly string[]).includes(name)) return { ok: false, error: "No such test user" };
+    const user = await db.user.findUnique({ where: { username: name } });
+    if (!user || user.googleSub) return { ok: false, error: "This account signs in with Google" };
+    return { ok: true, user: toSessionUser(user, "dev") };
   },
 };
 
-/** The active provider. Replace here when real authentication arrives. */
+/** Seeded test accounts the dev login would admit right now (login page Testing section). */
+export async function availableDevLogins() {
+  if (!devLoginEnabled()) return [];
+  const rows = await db.user.findMany({
+    where: { username: { in: [...DEV_LOGIN_USERNAMES] }, googleSub: null },
+    select: { username: true, firstName: true, lastName: true },
+  });
+  return DEV_LOGIN_USERNAMES.flatMap((u) => {
+    const r = rows.find((x) => x.username === u);
+    return r ? [{ username: u as string, firstName: r.firstName, lastName: r.lastName }] : [];
+  });
+}
+
 export const authProvider: AuthProvider = devLoginProvider;

@@ -31,7 +31,7 @@ describe("admin server actions refuse non-admins", () => {
     caseId = (await db.case.findFirstOrThrow()).id;
   });
   beforeEach(() => {
-    cookieValue = createSessionValue(roy);
+    cookieValue = createSessionValue(roy, "google");
   });
 
   const calls = () =>
@@ -54,20 +54,34 @@ describe("admin server actions refuse non-admins", () => {
       ["setGateMode", () => settings.setGateModeAction("forceUnlocked")],
     ] as const;
 
-  it("rejects every admin action for a signed-in non-admin and changes nothing", async () => {
-    const before = { concepts: await db.concept.count(), cases: await db.case.count(), explainers: await db.explainerCard.count(), nodes: await db.issueTreeNode.count() };
-    for (const [name, call] of calls()) await expect(call(), name).rejects.toThrow("Not authorized");
-    expect({ concepts: await db.concept.count(), cases: await db.case.count(), explainers: await db.explainerCard.count(), nodes: await db.issueTreeNode.count() }).toEqual(before);
-    expect((await db.user.findUniqueOrThrow({ where: { id: roy } })).gateMode).toBe("auto");
+  const snapshot = async () => ({
+    concepts: await db.concept.count(),
+    cases: await db.case.count(),
+    explainers: await db.explainerCard.count(),
+    nodes: await db.issueTreeNode.count(),
+    gateModes: (await db.user.findMany({ select: { gateMode: true } })).map((u) => u.gateMode).join(),
   });
 
-  it("rejects them when signed out too", async () => {
+  const refusesAll = async () => {
+    const before = await snapshot();
+    for (const [name, call] of calls()) expect(await call(), name).toEqual({ ok: false, error: "Not authorized" });
+    expect(await snapshot()).toEqual(before);
+  };
+
+  it("refuses every admin action for a signed-in non-admin and changes nothing", refusesAll);
+
+  it("refuses them for the owner signed in through the test login (AE2: dev sessions are never admin)", async () => {
+    cookieValue = createSessionValue(david, "dev");
+    await refusesAll();
+  });
+
+  it("refuses them when signed out too", async () => {
     cookieValue = undefined;
-    await expect(concepts.deleteConceptAction(conceptId)).rejects.toThrow("Not authorized");
+    await refusesAll();
   });
 
   it("lets the admin through", async () => {
-    cookieValue = createSessionValue(david);
+    cookieValue = createSessionValue(david, "google");
     const r = await concepts.publishConceptAction(conceptId, true);
     expect(r).toEqual({ ok: true });
   });

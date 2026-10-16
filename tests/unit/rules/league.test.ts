@@ -1,12 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { ADVANCE_CUTOFF, leagueDaysLeft, leagueStandings, standingsWindow } from "@/lib/rules/league";
 
-const m = (id: string, username: string, weeklyXp: number) => ({ id, username, name: username, weeklyXp });
+const m = (id: string, name: string, weeklyXp: number) => ({ id, name, weeklyXp });
 
 describe("league", () => {
-  it("ranks by weekly XP, breaking ties by username", () => {
+  it("ranks by weekly XP, breaking ties by name", () => {
     const s = leagueStandings([m("1", "zed", 100), m("2", "amy", 100), m("3", "bob", 300)]);
-    expect(s.map((x) => [x.username, x.rank])).toEqual([["bob", 1], ["amy", 2], ["zed", 3]]);
+    expect(s.map((x) => [x.name, x.rank])).toEqual([["bob", 1], ["amy", 2], ["zed", 3]]);
   });
 
   it("marks the top 15 as advancing", () => {

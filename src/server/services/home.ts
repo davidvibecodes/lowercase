@@ -17,7 +17,7 @@ async function weeklyXpByUser(db: Db, userIds: string[], now: Date) {
 
 function toMember(row: { id: string; username: string | null; firstName: string; lastName: string }, xp: Map<string, number>): LeagueMember {
   const u = toPerson(row);
-  return { id: u.id, username: u.username, name: `${u.firstName} ${u.lastName}`, weeklyXp: xp.get(u.id) ?? 0 };
+  return { id: u.id, name: `${u.firstName} ${u.lastName}`, weeklyXp: xp.get(u.id) ?? 0 };
 }
 
 export async function getLeague(db: Db, userId: string, now = new Date()) {

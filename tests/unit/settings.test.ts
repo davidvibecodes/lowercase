@@ -14,8 +14,13 @@ describe("settings", () => {
     expect((await db.user.findUniqueOrThrow({ where: { id: david } })).firstName).toBe("Dave");
   });
 
-  it("refuses an email another user owns", async () => {
-    await expect(updateAccount(db, await userId("davidsathyandevice"), { firstName: "D", lastName: "S", email: "roy.c@lowercase.test" })).rejects.toThrow(/in use/);
+  it("never changes email from the account form, so nobody can claim the admin address (R5, KTD5)", async () => {
+    const roy = await userId("roy");
+    await updateAccount(db, roy, { firstName: "Roy", lastName: "C", email: "DavidSathyanDevice@gmail.com" });
+    const row = await db.user.findUniqueOrThrow({ where: { id: roy } });
+    expect(row.email).toBe("roy.c@lowercase.test");
+    const { toSessionUser } = await import("@/lib/auth/provider");
+    expect(toSessionUser(row, "google").isAdmin).toBe(false);
   });
 
   it("validates gate modes", async () => {
