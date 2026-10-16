@@ -1,0 +1,101 @@
+{
+  "schema_version": "2.0.0",
+  "platform_target": "AI_Case_Coach_CMS",
+  "agent_execution_rules": { "strict_fact_gating": true },
+  "cases": [
+    {
+      "case_id": "SAMPLE_001",
+      "title": "Corner Bakery",
+      "metadata": { "case_type": "Profitability", "industry": "Food retail", "difficulty": "Moderate", "source_pages": [1, 2] },
+      "problem_statement": "A neighbourhood bakery's profits have halved in a year. Find out why.",
+      "case_facts_given": ["Profits fell by half over twelve months", "Flour prices rose sharply"],
+      "extracted_case_facts": [
+        {
+          "fact_id": "F_S1_01",
+          "fact_text": "Revenue is flat year on year.",
+          "fact_category": "CLARIFYING_SCOPING",
+          "mapped_node_id": "N_S1_ROOT",
+          "source_turn_id": 2,
+          "reveal_gate": {
+            "prerequisite_node_ids": [],
+            "trigger_condition": "Candidate asks whether revenue or costs moved.",
+            "anti_leak_rule": "Don't mention flour yet.",
+            "missed_fact_fallback_nudge": "Which side of the profit equation moved?"
+          }
+        },
+        {
+          "fact_id": "F_S1_02",
+          "fact_text": "Ingredient costs are up 40%, mostly flour.",
+          "fact_category": "TREE_DIRECTIONAL",
+          "mapped_node_id": "N_S1_COST",
+          "source_turn_id": 4,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_S1_ROOT"],
+            "trigger_condition": "Candidate splits costs into fixed and variable.",
+            "anti_leak_rule": "Don't name the supplier contract.",
+            "missed_fact_fallback_nudge": "Have you looked at what goes into each loaf?"
+          }
+        },
+        {
+          "fact_id": "F_S1_03",
+          "fact_text": "The bakery signed a fixed-price flour contract that ended last spring.",
+          "fact_category": "ROOT_CAUSE",
+          "mapped_node_id": "N_S1_FLOUR",
+          "source_turn_id": 6,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_S1_COST"],
+            "trigger_condition": "Candidate asks how flour is bought.",
+            "anti_leak_rule": "",
+            "missed_fact_fallback_nudge": "How does the bakery buy its flour?"
+          }
+        }
+      ],
+      "issue_tree": {
+        "root_node_id": "N_S1_ROOT",
+        "correct_issue_path": ["N_S1_ROOT", "N_S1_COST", "N_S1_FLOUR"],
+        "nodes": [
+          { "node_id": "N_S1_ROOT", "label": "Profit", "parent_id": null, "children_ids": ["N_S1_REV", "N_S1_COST"], "is_on_correct_path": true, "node_status": "ACTIVE_BRANCH", "formula_or_framework": "Profit = Revenue - Cost", "mapped_fact_ids": ["F_S1_01"] },
+          { "node_id": "N_S1_REV", "label": "Revenue", "parent_id": "N_S1_ROOT", "children_ids": [], "is_on_correct_path": false, "node_status": "ELIMINATED_BRANCH", "formula_or_framework": null, "mapped_fact_ids": [] },
+          { "node_id": "N_S1_COST", "label": "Cost", "parent_id": "N_S1_ROOT", "children_ids": ["N_S1_FLOUR"], "is_on_correct_path": true, "node_status": "ACTIVE_BRANCH", "formula_or_framework": null, "mapped_fact_ids": ["F_S1_02"] },
+          { "node_id": "N_S1_FLOUR", "label": "Flour contract", "parent_id": "N_S1_COST", "children_ids": [], "is_on_correct_path": true, "node_status": "ROOT_CAUSE", "formula_or_framework": null, "mapped_fact_ids": ["F_S1_03"] }
+        ]
+      },
+      "recommendations": [
+        { "rec_id": "R_S1_01", "category": "Procurement", "recommendation_text": "Negotiate a new multi-month flour contract.", "target_node_id": "N_S1_FLOUR" }
+      ],
+      "summary_takeaways": ["Split profit into revenue and cost before diving in."],
+      "transcript": [
+        { "turn_id": 1, "speaker": "Interviewer", "text": "Profits halved. Why?" },
+        { "turn_id": 2, "speaker": "Candidate", "text": "Did revenue or costs change?" }
+      ]
+    },
+    {
+      "case_id": "SAMPLE_002",
+      "title": "Bike Share Growth",
+      "metadata": { "case_type": "Growth", "industry": "Mobility", "difficulty": "Easy" },
+      "problem_statement": "A city bike-share wants to double its riders. Where should it start?",
+      "case_facts_given": [],
+      "extracted_case_facts": [
+        {
+          "fact_id": "F_S2_01",
+          "fact_text": "Most riders use the bikes for commuting.",
+          "fact_category": "TREE_DIRECTIONAL",
+          "mapped_node_id": "N_S2_USERS",
+          "source_turn_id": 1,
+          "reveal_gate": { "prerequisite_node_ids": [], "trigger_condition": "Candidate asks who rides.", "anti_leak_rule": null, "missed_fact_fallback_nudge": "Who rides today?" }
+        }
+      ],
+      "issue_tree": {
+        "root_node_id": "N_S2_ROOT",
+        "correct_issue_path": ["N_S2_ROOT", "N_S2_USERS"],
+        "nodes": [
+          { "node_id": "N_S2_ROOT", "label": "Riders", "parent_id": null, "children_ids": ["N_S2_USERS"], "is_on_correct_path": true, "node_status": "ACTIVE_BRANCH", "formula_or_framework": null },
+          { "node_id": "N_S2_USERS", "label": "Commuters", "parent_id": "N_S2_ROOT", "children_ids": [], "is_on_correct_path": true, "node_status": "ROOT_CAUSE", "formula_or_framework": null }
+        ]
+      },
+      "recommendations": [],
+      "summary_takeaways": [],
+      "transcript": [{ "turn_id": 1, "speaker": "Interviewer", "text": "Double the riders. Go." }]
+    }
+  ]
+}

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Pencil, Plus } from "lucide-react";
+import { Pencil, Plus, Upload } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Segmented } from "@/components/ui/Tabs";
 import { toast } from "@/components/ui/Toast";
@@ -34,6 +34,9 @@ export function CaseList({ cases }: { cases: Row[] }) {
         >
           <Plus size={18} aria-hidden /> New Case
         </Button>
+        <Link href="/admin/cases/import" className="inline-flex h-11 items-center gap-2 rounded-2xl border border-line bg-surface-2 px-5 text-[15px] font-bold text-ink hover:border-line-strong hover:bg-surface-3">
+          <Upload size={18} aria-hidden /> Import casebank
+        </Link>
       </div>
       <ul className="space-y-2.5">
         {shown.map((c) => (
