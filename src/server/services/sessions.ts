@@ -12,7 +12,8 @@ import { isLevelUnlocked } from "@/lib/rules/gates";
 import { averageScore, validateRubric } from "@/lib/rules/rubric";
 import { XP_INTERVIEWEE_SOLVE, XP_INTERVIEWER_SOLVE } from "@/lib/rules/xp";
 import type { CaseSummary, FactGuidance, HintView, SessionView } from "@/lib/realtime/events";
-import { isCaseType, isDifficulty, type CaseType, type Difficulty, type Role, type SessionStatus } from "@/lib/types";
+import { isCaseType, isDifficulty, type CaseType, type Difficulty, type NodeStatus, type Role, type SessionStatus } from "@/lib/types";
+import { keysFromJson } from "@/lib/node-keys";
 import { personSelect, ServiceError, toPerson } from "./invites";
 import { getGateResults, recordCaseSolved } from "./progress";
 
@@ -278,7 +279,7 @@ export async function buildView(db: Db, sessionId: string, viewerId: string, con
   const labelOf = new Map((c?.nodes ?? []).map((n) => [n.key, n.label]));
   const label = (key: string | null) => (key ? (labelOf.get(key) ?? "(removed node)") : null);
   const guidance = (f: (typeof items)[number]): FactGuidance | null => {
-    const coverFirst = parseKeyList(f.gatePrereqKeys).map((k) => label(k)!);
+    const coverFirst = keysFromJson(f.gatePrereqKeys).map((k) => label(k)!);
     const g = { category: f.category, node: label(f.nodeKey), coverFirst, trigger: f.gateTrigger, antiLeak: f.gateAntiLeak, nudge: f.gateNudge };
     return g.category || g.node || coverFirst.length || g.trigger || g.antiLeak || g.nudge ? g : null;
   };
@@ -318,7 +319,7 @@ export async function buildView(db: Db, sessionId: string, viewerId: string, con
               label: n.label,
               isCorrectPath: n.isCorrectPath,
               order: n.order,
-              status: n.status as "ACTIVE_BRANCH" | "ELIMINATED_BRANCH" | "ROOT_CAUSE",
+              status: n.status as NodeStatus,
               formula: n.formula,
             })),
           }
@@ -345,14 +346,4 @@ export async function buildView(db: Db, sessionId: string, viewerId: string, con
       : null,
     closedBy: s.closedById,
   };
-}
-
-function parseKeyList(json: string | null): string[] {
-  if (!json) return [];
-  try {
-    const v = JSON.parse(json);
-    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
-  } catch {
-    return [];
-  }
 }

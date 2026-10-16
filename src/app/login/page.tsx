@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { availableDevLogins } from "@/lib/auth/dev-provider";
+import { availableDevLogins, DEV_OWNER_USERNAME } from "@/lib/auth/dev-provider";
 import { googleEnv } from "@/lib/auth/google";
 import { getCurrentUser } from "@/lib/auth/guards";
 import { loginErrorMessage } from "@/lib/auth/login-errors";
@@ -10,14 +10,12 @@ import { Wordmark } from "@/components/shell/Wordmark";
 export const metadata: Metadata = { title: "Log in" };
 export const dynamic = "force-dynamic";
 
-const OWNER = "davidsathyandevice";
-
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   if (await getCurrentUser()) redirect("/");
   const { error } = await searchParams;
   const devLogins = await availableDevLogins();
-  const owner = devLogins.find((a) => a.username === OWNER) ?? null;
-  const peers = devLogins.filter((a) => a.username !== OWNER);
+  const owner = devLogins.find((a) => a.username === DEV_OWNER_USERNAME) ?? null;
+  const peers = devLogins.filter((a) => a.username !== DEV_OWNER_USERNAME);
 
   return (
     <main className="relative grid min-h-dvh place-items-center overflow-hidden px-4 py-10">

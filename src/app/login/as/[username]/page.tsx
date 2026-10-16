@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
-import { DEV_LOGIN_USERNAMES, devLoginEnabled } from "@/lib/auth/dev-provider";
+import { devLoginEnabled, isDevLoginUsername } from "@/lib/auth/dev-provider";
 import { DevLoginButton } from "@/components/login/DevLoginButton";
 import { Wordmark } from "@/components/shell/Wordmark";
 
@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
  */
 export default async function PeerTesterPage({ params }: { params: Promise<{ username: string }> }) {
   const username = decodeURIComponent((await params).username).toLowerCase();
-  if (!devLoginEnabled() || !(DEV_LOGIN_USERNAMES as readonly string[]).includes(username)) notFound();
+  if (!devLoginEnabled() || !isDevLoginUsername(username)) notFound();
   const peer = await db.user.findUnique({ where: { username }, select: { firstName: true, lastName: true, googleSub: true } });
   if (!peer) notFound();
   return (

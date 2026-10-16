@@ -5,9 +5,8 @@ import { useRef, useState } from "react";
 import { AlertTriangle, ArrowLeft, CheckCircle2, FileJson, RotateCcw, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { CASEBANK_MAX_BYTES } from "@/lib/types";
 import type { CaseOutcome, CasePreview, ImportResult } from "@/server/services/casebank";
-
-const MAX_BYTES = 2 * 1024 * 1024;
 
 type State =
   | { step: "pick" }
@@ -31,7 +30,6 @@ export function CasebankImport() {
   const [busy, setBusy] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const doc = useRef<unknown>(null);
-  const input = useRef<HTMLInputElement>(null);
 
   const run = async (dryRun: boolean) => {
     setBusy(true);
@@ -50,7 +48,7 @@ export function CasebankImport() {
   const pick = async (file: File | undefined) => {
     if (!file) return;
     setFileName(file.name);
-    if (file.size > MAX_BYTES) return setState({ step: "error", errors: ["The file is larger than 2 MB."] });
+    if (file.size > CASEBANK_MAX_BYTES) return setState({ step: "error", errors: ["The file is larger than 2 MB."] });
     try {
       doc.current = JSON.parse(await file.text());
     } catch {
@@ -75,7 +73,7 @@ export function CasebankImport() {
         </p>
         <p className="mt-2 text-xs text-faint">The file is read in your browser and sent only to this app. Keep licensed casebanks out of git, e.g. in content/private/.</p>
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <input ref={input} type="file" accept="application/json,.json" className="sr-only" id="casebank-file" disabled={busy} onChange={(e) => void pick(e.target.files?.[0])} />
+          <input type="file" accept="application/json,.json" className="sr-only" id="casebank-file" disabled={busy} onChange={(e) => void pick(e.target.files?.[0])} />
           <label
             htmlFor="casebank-file"
             aria-disabled={busy}

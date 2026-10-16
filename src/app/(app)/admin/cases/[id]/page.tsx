@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { db } from "@/lib/db";
 import { getCaseAdmin, toSavedItem } from "@/server/services/admin-cases";
 import { CaseEditor } from "@/components/admin/CaseEditor";
+import type { NodeStatus } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Edit case · Admin" };
 
@@ -36,7 +37,7 @@ export default async function EditCase({ params }: { params: Promise<{ id: strin
         label: n.label,
         isCorrectPath: n.isCorrectPath,
         order: n.order,
-        status: n.status as "ACTIVE_BRANCH" | "ELIMINATED_BRANCH" | "ROOT_CAUSE",
+        status: n.status as NodeStatus,
         formula: n.formula,
       }))}
     />

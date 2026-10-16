@@ -9,17 +9,15 @@ import * as social from "@/server/services/social";
 
 type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
 
-const fail = (e: unknown): Result => ({ ok: false, error: e instanceof ServiceError ? e.message : "Something went wrong" });
-
 async function run<T extends object>(fn: (me: string) => Promise<T | void>): Promise<Result<T>> {
   const user = await requireUser();
   try {
     const out = (await fn(user.id)) ?? ({} as T);
-    revalidatePath("/friends");
+    // The layout carries the Received badge; revalidating it covers /friends too.
     revalidatePath("/", "layout");
     return { ok: true, ...out };
   } catch (e) {
-    return fail(e) as Result<T>;
+    return { ok: false, error: e instanceof ServiceError ? e.message : "Something went wrong" };
   }
 }
 

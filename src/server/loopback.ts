@@ -7,6 +7,11 @@ export function loopbackHosts(port: number | string): string[] {
   return [`localhost:${port}`, `127.0.0.1:${port}`];
 }
 
+/** Exact origins for strict checks such as adminRoute (no lowercasing, Origin required). */
+export function loopbackOrigins(port: number | string): string[] {
+  return loopbackHosts(port).map((h) => `http://${h}`);
+}
+
 export function isAllowedHost(host: string | undefined, port: number | string): boolean {
   return !!host && loopbackHosts(port).includes(host.toLowerCase());
 }
@@ -14,5 +19,5 @@ export function isAllowedHost(host: string | undefined, port: number | string): 
 /** Browsers omit Origin on some same-origin requests; when it is present it must be ours. */
 export function isAllowedOrigin(origin: string | undefined, port: number | string): boolean {
   if (!origin) return true;
-  return loopbackHosts(port).some((h) => origin.toLowerCase() === `http://${h}`);
+  return loopbackOrigins(port).includes(origin.toLowerCase());
 }

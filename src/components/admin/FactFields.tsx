@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import type { TreeNodeData } from "@/components/issue-tree/layout";
-import { FACT_CATEGORIES } from "@/lib/types";
+import { FACT_CATEGORIES, type FactCategory } from "@/lib/types";
 import { inputCls, type ListItem } from "./fields";
 
-const CATEGORY_LABEL: Record<(typeof FACT_CATEGORIES)[number], string> = {
+const CATEGORY_LABEL: Record<FactCategory, string> = {
   CLARIFYING_SCOPING: "Clarifying / scoping",
   TREE_DIRECTIONAL: "Tree: directional",
   TREE_ELIMINATION: "Tree: elimination",

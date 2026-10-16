@@ -2,11 +2,10 @@ import { NextResponse, type NextRequest } from "next/server";
 import { revalidatePath } from "next/cache";
 import { adminRoute } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
+import { CASEBANK_MAX_BYTES as MAX_BYTES } from "@/lib/types";
 import { importCasebank } from "@/server/services/casebank";
 
 export const dynamic = "force-dynamic";
-
-const MAX_BYTES = 2 * 1024 * 1024;
 
 /** Reads at most MAX_BYTES; route handlers have no default body limit. */
 async function readCapped(req: NextRequest): Promise<string | null> {

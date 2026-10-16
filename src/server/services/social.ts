@@ -1,9 +1,8 @@
-import { Prisma } from "@prisma/client";
 import type { Db } from "@/lib/db";
 import type { PersonRef } from "@/lib/realtime/events";
 import { normalizeUsername } from "@/lib/username";
 import { getGroupStandings } from "./home";
-import { ServiceError, onboarded, personSelect, toPerson } from "./invites";
+import { ServiceError, areFriends, isUniqueViolation, onboarded, personSelect, toPerson } from "./invites";
 
 /**
  * Friends & Groups (R17–R22, KTD8). Friendships and memberships change only
@@ -17,22 +16,17 @@ export const NO_LONGER_OPEN = "This request is no longer open";
 
 const pairKey = (a: string, b: string) => [a, b].sort().join(":");
 const inviteKey = (groupId: string, toId: string) => `${groupId}:${toId}`;
-const isUniqueViolation = (e: unknown) => e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002";
 
 export async function listFriends(db: Db, userId: string) {
   const rows = await db.friendship.findMany({ where: { userId, friend: onboarded }, select: { friend: { select: personSelect } } });
   return rows.map((r) => toPerson(r.friend)).sort((a, b) => a.firstName.localeCompare(b.firstName));
 }
 
-async function areFriends(db: Db, a: string, b: string) {
-  return (await db.friendship.count({ where: { userId: a, friendId: b } })) > 0;
-}
-
-/** Someone findable by handle: onboarded, not a league bot, not yourself (R17). */
-async function findPerson(db: Db, me: string, raw: string) {
+/** Someone findable by handle: onboarded and not a league bot (R17). Callers decide what finding yourself means. */
+async function findByHandle(db: Db, raw: string) {
   const n = normalizeUsername(raw);
   if (!n.ok) return null;
-  const u = await db.user.findFirst({ where: { username: n.username, isLeagueBot: false, id: { not: me } }, select: personSelect });
+  const u = await db.user.findFirst({ where: { username: n.username, isLeagueBot: false }, select: personSelect });
   return u ? toPerson(u) : null;
 }
 
@@ -41,10 +35,10 @@ export type PersonResult = { person: PersonRef; relationship: Relationship; requ
 
 /** Exact, case-insensitive username match only, so the search can't be used as a directory (R17). */
 export async function searchPeople(db: Db, me: string, raw: string): Promise<PersonResult | null> {
-  const person = await findPerson(db, me, raw);
-  if (!person) return null;
-  if (await areFriends(db, me, person.id)) return { person, relationship: "friends", requestId: null };
-  const open = await db.friendRequest.findUnique({ where: { openPairKey: pairKey(me, person.id) } });
+  const person = await findByHandle(db, raw);
+  if (!person || person.id === me) return null;
+  const [friends, open] = await Promise.all([areFriends(db, me, person.id), db.friendRequest.findUnique({ where: { openPairKey: pairKey(me, person.id) } })]);
+  if (friends) return { person, relationship: "friends", requestId: null };
   if (!open) return { person, relationship: "none", requestId: null };
   return { person, relationship: open.fromId === me ? "outgoing" : "incoming", requestId: open.id };
 }
@@ -55,8 +49,15 @@ export type GroupResult = { id: string; name: string; ownerName: string; memberC
 export async function searchGroups(db: Db, me: string, raw: string): Promise<GroupResult[]> {
   const q = raw.trim().toLowerCase();
   if (q.length < 2) return [];
+  // Names are matched in JS so case folding stays exactly as before; members are counted, not loaded.
   const groups = await db.studyGroup.findMany({
-    include: { owner: { select: { firstName: true, lastName: true } }, members: { select: { userId: true } } },
+    select: {
+      id: true,
+      name: true,
+      owner: { select: { firstName: true, lastName: true } },
+      _count: { select: { members: true } },
+      members: { where: { userId: me }, select: { userId: true }, take: 1 },
+    },
     orderBy: { name: "asc" },
   });
   return groups
@@ -66,8 +67,8 @@ export async function searchGroups(db: Db, me: string, raw: string): Promise<Gro
       id: g.id,
       name: g.name,
       ownerName: `${g.owner.firstName} ${g.owner.lastName}`.trim(),
-      memberCount: g.members.length,
-      isMember: g.members.some((m) => m.userId === me),
+      memberCount: g._count.members,
+      isMember: g.members.length > 0,
     }));
 }
 
@@ -75,9 +76,8 @@ export type SendResult = { status: "sent" | "accepted"; otherId: string; request
 
 /** R19: send by username; a reverse pending request is accepted instead (AE3). */
 export async function sendFriendRequest(db: Db, me: string, username: string): Promise<SendResult> {
-  const n = normalizeUsername(username);
-  if (n.ok && (await db.user.count({ where: { id: me, username: n.username } }))) throw new ServiceError("You can't add yourself");
-  const target = await findPerson(db, me, username);
+  const target = await findByHandle(db, username);
+  if (target?.id === me) throw new ServiceError("You can't add yourself");
   if (!target) throw new ServiceError("No one has that username");
   if (await areFriends(db, me, target.id)) throw new ServiceError("You're already friends");
 
@@ -206,15 +206,16 @@ export async function receivedCount(db: Db, me: string) {
 /** Everything the Friends & Groups page shows. */
 export async function listSocial(db: Db, me: string) {
   const person = { select: personSelect };
-  const [friends, groups, sentRequests, receivedRequests, sentInvites, receivedInvites] = await Promise.all([
+  const [friends, groups, sentRequests, receivedRequests, sentInvites, receivedInvites, owned] = await Promise.all([
     listFriends(db, me),
     getGroupStandings(db, me),
     db.friendRequest.findMany({ where: { fromId: me, status: "PENDING" }, include: { to: person }, orderBy: { createdAt: "desc" } }),
     db.friendRequest.findMany({ where: { toId: me, status: "PENDING" }, include: { from: person }, orderBy: { createdAt: "desc" } }),
     db.groupInvite.findMany({ where: { fromId: me, status: "PENDING" }, include: { to: person, group: { select: { id: true, name: true } } }, orderBy: { createdAt: "desc" } }),
     db.groupInvite.findMany({ where: { toId: me, status: "PENDING" }, include: { from: person, group: { select: { id: true, name: true } } }, orderBy: { createdAt: "desc" } }),
+    db.studyGroup.findMany({ where: { ownerId: me }, select: { id: true } }),
   ]);
-  const ownedGroupIds = new Set((await db.studyGroup.findMany({ where: { ownerId: me }, select: { id: true } })).map((g) => g.id));
+  const ownedGroupIds = new Set(owned.map((g) => g.id));
   return {
     friends,
     groups: groups.map((g) => ({ ...g, owned: ownedGroupIds.has(g.id) })),

@@ -1,6 +1,7 @@
-import { Prisma, type User } from "@prisma/client";
+import type { User } from "@prisma/client";
 import type { Db } from "@/lib/db";
 import type { GoogleClaims, GoogleErrorCode } from "@/lib/auth/google";
+import { isUniqueViolation } from "./invites";
 
 export type ResolveResult = { ok: true; user: User } | { ok: false; code: GoogleErrorCode };
 
@@ -21,8 +22,6 @@ function names(c: GoogleClaims): { firstName: string; lastName: string } {
   const lastName = (c.family_name?.trim() ?? rest.join(" ")).slice(0, 40);
   return { firstName, lastName };
 }
-
-const isUniqueViolation = (e: unknown) => e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002";
 
 /**
  * Finds or creates the account for a verified Google identity (KTD4).

@@ -7,6 +7,10 @@ export const USERNAME_RULE = /^[a-z][a-z0-9._]{2,19}$/;
 
 export type UsernameCheck = { ok: true; username: string } | { ok: false; reason: string };
 
+/** Shared by the availability check, the save action and the onboarding form. */
+export const TAKEN_REASON = "taken";
+export const TAKEN = "Username is already taken";
+
 export function normalizeUsername(raw: string): UsernameCheck {
   const username = raw.trim().replace(/^@/, "").toLowerCase();
   if (username.length < 3 || username.length > 20) return { ok: false, reason: "Use 3–20 characters" };

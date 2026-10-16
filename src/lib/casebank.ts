@@ -6,7 +6,7 @@
  */
 import { z } from "zod";
 import { validateTree } from "@/lib/rules/tree";
-import { CASE_TYPES, FACT_CATEGORIES, NODE_STATUSES, type CaseType, type Difficulty, type NodeStatus } from "@/lib/types";
+import { CASE_TYPES, FACT_CATEGORIES, isCaseType, NODE_STATUSES, type CaseItemKind, type CaseType, type Difficulty, type NodeStatus, type Speaker } from "@/lib/types";
 
 const id = z.string().regex(/^[A-Za-z0-9_:-]{1,64}$/, "Ids may use letters, digits, _ : - (max 64)");
 const text = (max: number) => z.string().trim().min(1).max(max);
@@ -69,7 +69,7 @@ const DIFFICULTY: Record<string, Difficulty> = { easy: 1, moderate: 2, difficult
 const CASE_TYPE_ALIASES: Record<string, CaseType> = { growth: "Revenue Growth" };
 
 export type PlannedItem = {
-  kind: "fact" | "hint" | "recommendation" | "observation" | "given";
+  kind: CaseItemKind;
   externalId: string;
   text: string;
   category?: string | null;
@@ -93,7 +93,7 @@ export type PlannedCase = {
   sourcePages: number[];
   nodes: PlannedNode[];
   items: PlannedItem[];
-  transcript: Array<{ speaker: "interviewer" | "candidate"; text: string }>;
+  transcript: Array<{ speaker: Speaker; text: string }>;
 };
 
 export type CasebankPlan = { ok: true; cases: PlannedCase[] } | { ok: false; errors: string[] };
@@ -118,7 +118,7 @@ function orderNodes(c: CasebankCase): CasebankCase["issue_tree"]["nodes"] {
 }
 
 function checkReferences(c: CasebankCase, errors: string[]) {
-  const where = `${c.case_id}`;
+  const where = c.case_id;
   const nodeIds = new Set<string>();
   for (const n of c.issue_tree.nodes) {
     if (nodeIds.has(n.node_id)) errors.push(`${where}: node ${n.node_id} appears twice`);
@@ -152,7 +152,7 @@ function checkReferences(c: CasebankCase, errors: string[]) {
 function mapCase(c: CasebankCase, errors: string[]): PlannedCase | null {
   const before = errors.length;
   const rawType = c.metadata.case_type.trim();
-  const caseType = (CASE_TYPES as readonly string[]).includes(rawType) ? (rawType as CaseType) : CASE_TYPE_ALIASES[rawType.toLowerCase()];
+  const caseType: CaseType | undefined = isCaseType(rawType) ? rawType : CASE_TYPE_ALIASES[rawType.toLowerCase()];
   if (!caseType) errors.push(`${c.case_id}: case type "${rawType}" has no match in lowercase (${CASE_TYPES.join(", ")})`);
   const difficulty = DIFFICULTY[c.metadata.difficulty.trim().toLowerCase()];
   if (!difficulty) errors.push(`${c.case_id}: difficulty "${c.metadata.difficulty}" must be Easy, Moderate or Difficult`);
@@ -201,7 +201,7 @@ function mapCase(c: CasebankCase, errors: string[]): PlannedCase | null {
     sourcePages: c.metadata.source_pages ?? [],
     nodes,
     items,
-    transcript: [...c.transcript].sort((a, b) => a.turn_id - b.turn_id).map((t) => ({ speaker: t.speaker.toLowerCase() as "interviewer" | "candidate", text: t.text })),
+    transcript: [...c.transcript].sort((a, b) => a.turn_id - b.turn_id).map((t) => ({ speaker: t.speaker.toLowerCase() as Speaker, text: t.text })),
   };
 }
 

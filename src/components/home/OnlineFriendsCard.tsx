@@ -4,11 +4,11 @@ import { Card, CardHeader } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { useInviteFriend } from "@/components/friends/useInviteFriend";
 import { usePresence } from "@/stores/presence";
+import type { PersonRef } from "@/lib/realtime/events";
 import { Avatar } from "./Avatar";
 
-type Friend = { id: string; username: string; firstName: string; lastName: string; avatarUrl?: string | null };
 
-export function OnlineFriendsCard({ friends }: { friends: Friend[] }) {
+export function OnlineFriendsCard({ friends }: { friends: PersonRef[] }) {
   const online = usePresence((s) => s.online);
   const { pending, invite, cancel } = useInviteFriend();
   const list = friends.filter((f) => online[f.id]);

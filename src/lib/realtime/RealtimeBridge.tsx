@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useRef } from "react";
 import { usePresence } from "@/stores/presence";
 import { useSocial } from "@/stores/social";
 import { getSocket } from "./socket";
@@ -9,6 +9,11 @@ import { getSocket } from "./socket";
 /** Connects the tab's socket and feeds the presence store (U4). */
 export function RealtimeBridge({ initialOnline, initialReceived }: { initialOnline: string[]; initialReceived: number }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const pathRef = useRef(pathname);
+  useEffect(() => {
+    pathRef.current = pathname;
+  }, [pathname]);
   useEffect(() => {
     useSocial.getState().setReceived(initialReceived);
   }, [initialReceived]);
@@ -21,10 +26,10 @@ export function RealtimeBridge({ initialOnline, initialReceived }: { initialOnli
     const onError = () => usePresence.getState().setStatus(s.active ? "reconnecting" : "offline");
     const onSnapshot = (ids: string[]) => usePresence.getState().setSnapshot(ids);
     const onUpdate = (p: { userId: string; online: boolean }) => usePresence.getState().setOnline(p.userId, p.online);
-    // A request or invite changed for me: update the badge and refresh lists (R18, KTD9).
+    // A request or invite changed for me: update the badge everywhere, refresh only pages that list friends (R18, KTD9).
     const onSocial = (p: { received: number }) => {
       useSocial.getState().setReceived(p.received);
-      router.refresh();
+      if (pathRef.current === "/" || pathRef.current === "/friends") router.refresh();
     };
     if (s.connected) onConnect();
     s.on("connect", onConnect);

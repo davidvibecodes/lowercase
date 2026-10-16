@@ -1,5 +1,8 @@
+import type { Prisma } from "@prisma/client";
 import type { Db } from "@/lib/db";
 import { planCasebank, type PlannedCase } from "@/lib/casebank";
+import { keysToJson } from "@/lib/node-keys";
+import type { CaseItemKind } from "@/lib/types";
 import { writeTree } from "@/server/seed-runner";
 
 /**
@@ -9,7 +12,8 @@ import { writeTree } from "@/server/seed-runner";
  * Each case is its own transaction, so one failure can't half-write another.
  */
 
-const IMPORTED_KINDS = ["fact", "hint", "recommendation", "observation", "given"] as const;
+/** The item kinds an import owns. Listed on purpose: a kind added to the CMS later isn't archived by re-imports. */
+const IMPORTED_KINDS = ["fact", "hint", "recommendation", "observation", "given"] as const satisfies readonly CaseItemKind[];
 
 export type CaseCounts = { facts: number; nodes: number; recommendations: number; hints: number; given: number; takeaways: number; turns: number };
 
@@ -35,10 +39,20 @@ function counts(c: PlannedCase): CaseCounts {
   return { facts: n("fact"), nodes: c.nodes.length, recommendations: n("recommendation"), hints: n("hint"), given: n("given"), takeaways: n("observation"), turns: c.transcript.length };
 }
 
-async function preview(db: Db, c: PlannedCase): Promise<CasePreview> {
-  const existing = await db.case.findUnique({ where: { externalId: c.externalId }, select: { id: true } });
-  const active = existing ? await db.caseSession.count({ where: { caseId: existing.id, status: "ACTIVE" } }) : 0;
-  return { externalId: c.externalId, title: c.title, action: existing ? "update" : "create", blocked: active ? IN_PROGRESS : null, counts: counts(c) };
+function hasActiveSession(client: Db | Prisma.TransactionClient, caseId: string) {
+  return client.caseSession.count({ where: { caseId, status: "ACTIVE" } }).then((n) => n > 0);
+}
+
+/** Create/update and blocked status for every case, in two queries however many cases the file has. */
+async function previewAll(db: Db, cases: PlannedCase[]): Promise<CasePreview[]> {
+  const existing = await db.case.findMany({ where: { externalId: { in: cases.map((c) => c.externalId) } }, select: { id: true, externalId: true } });
+  const idByExternal = new Map(existing.map((e) => [e.externalId, e.id]));
+  const active = await db.caseSession.groupBy({ by: ["caseId"], where: { caseId: { in: existing.map((e) => e.id) }, status: "ACTIVE" } });
+  const busy = new Set(active.map((a) => a.caseId));
+  return cases.map((c) => {
+    const id = idByExternal.get(c.externalId);
+    return { externalId: c.externalId, title: c.title, action: id ? "update" : "create", blocked: id && busy.has(id) ? IN_PROGRESS : null, counts: counts(c) };
+  });
 }
 
 async function applyCase(db: Db, c: PlannedCase): Promise<void> {
@@ -54,7 +68,8 @@ async function applyCase(db: Db, c: PlannedCase): Promise<void> {
         published: true,
       };
       const existing = await tx.case.findUnique({ where: { externalId: c.externalId }, select: { id: true } });
-      if (existing && (await tx.caseSession.count({ where: { caseId: existing.id, status: "ACTIVE" } }))) throw new Error(IN_PROGRESS);
+      // Checked again inside the transaction: a session may have started since the preview.
+      if (existing && (await hasActiveSession(tx, existing.id))) throw new Error(IN_PROGRESS);
       const row = existing
         ? await tx.case.update({ where: { id: existing.id }, data })
         : await tx.case.create({ data: { ...data, externalId: c.externalId } });
@@ -77,7 +92,7 @@ async function applyCase(db: Db, c: PlannedCase): Promise<void> {
             category: item.category ?? null,
             nodeKey: item.nodeKey ?? null,
             sourceTurn: item.sourceTurn ?? null,
-            gatePrereqKeys: item.gatePrereqKeys?.length ? JSON.stringify(item.gatePrereqKeys) : null,
+            gatePrereqKeys: keysToJson(item.gatePrereqKeys),
             gateTrigger: item.gateTrigger ?? null,
             gateAntiLeak: item.gateAntiLeak ?? null,
             gateNudge: item.gateNudge ?? null,
@@ -100,7 +115,7 @@ async function applyCase(db: Db, c: PlannedCase): Promise<void> {
 export async function importCasebank(db: Db, doc: unknown, opts: { dryRun: boolean }): Promise<ImportResult> {
   const plan = planCasebank(doc);
   if (!plan.ok) return plan;
-  const cases = await Promise.all(plan.cases.map((c) => preview(db, c)));
+  const cases = await previewAll(db, plan.cases);
   if (opts.dryRun) return { ok: true, dryRun: true, cases, outcomes: [] };
 
   const outcomes: CaseOutcome[] = [];

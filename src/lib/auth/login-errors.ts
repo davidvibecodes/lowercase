@@ -1,5 +1,7 @@
+import type { GoogleErrorCode } from "./google";
+
 /** Fixed copy for /login?error=<code>; unknown codes get the generic line, never the raw value (KTD2). */
-const MESSAGES: Record<string, string> = {
+const MESSAGES: Record<GoogleErrorCode, string> = {
   google_cancelled: "Google sign-in was cancelled.",
   google_expired: "Your sign-in took too long or was interrupted. Try again.",
   google_failed: "Google sign-in didn't complete. Try again.",
@@ -10,5 +12,6 @@ const MESSAGES: Record<string, string> = {
 
 export function loginErrorMessage(code: string | undefined): string | undefined {
   if (!code) return undefined;
-  return MESSAGES[code] ?? "Something went wrong signing in. Try again.";
+  // Own keys only, so "constructor" or "toString" can't reach Object.prototype.
+  return Object.hasOwn(MESSAGES, code) ? MESSAGES[code as GoogleErrorCode] : "Something went wrong signing in. Try again.";
 }

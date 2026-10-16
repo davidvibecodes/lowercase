@@ -4,7 +4,7 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { claimUsernameAction, type ClaimState } from "@/app/onboarding/username/actions";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
-import { normalizeUsername } from "@/lib/username";
+import { normalizeUsername, TAKEN, TAKEN_REASON } from "@/lib/username";
 
 type Status =
   | { kind: "idle" }
@@ -49,7 +49,7 @@ export function UsernameForm() {
         const body = (await res.json()) as { available: boolean; reason?: string };
         if (id !== seq.current) return;
         if (body.available) setStatus({ kind: "available" });
-        else if (body.reason === "taken") setStatus({ kind: "taken" });
+        else if (body.reason === TAKEN_REASON) setStatus({ kind: "taken" });
         else setStatus({ kind: "invalid", reason: body.reason ?? "Not allowed" });
       } catch {
         if (id === seq.current) setStatus({ kind: "error" });
@@ -59,7 +59,7 @@ export function UsernameForm() {
   }, [value, retry]);
 
   // A save that lost the race comes back as "taken" and keeps the input (R10).
-  const serverTaken = state.error === "Username is already taken" && value === submitted.current;
+  const serverTaken = state.error === TAKEN && value === submitted.current;
   const shown: Status = serverTaken && status.kind === "available" ? { kind: "taken" } : status;
 
   return (
@@ -79,6 +79,7 @@ export function UsernameForm() {
           autoComplete="off"
           autoCapitalize="none"
           spellCheck={false}
+          // 20 characters plus an optional leading "@".
           maxLength={21}
           aria-describedby="username-status"
           className="h-full flex-1 bg-transparent pl-1 text-[15px] font-semibold text-ink outline-none"
@@ -94,7 +95,7 @@ export function UsernameForm() {
         )}
       </p>
       <p className="text-xs text-faint">3–20 characters: a letter first, then letters a–z, digits, dots or underscores.</p>
-      {state.error && state.error !== "Username is already taken" && value === submitted.current && (
+      {state.error && state.error !== TAKEN && value === submitted.current && (
         <p role="alert" className="text-sm font-bold text-amber">
           {state.error}
         </p>
@@ -113,7 +114,7 @@ function statusText(s: Status): string {
     case "available":
       return "✓ Username is available";
     case "taken":
-      return "✗ Username is already taken";
+      return `✗ ${TAKEN}`;
     case "invalid":
       return s.reason;
     case "error":

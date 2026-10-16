@@ -15,14 +15,16 @@ async function weeklyXpByUser(db: Db, userIds: string[], now: Date) {
   return new Map(rows.map((r) => [r.userId, r._sum.xp ?? 0]));
 }
 
-function toMember(row: { id: string; username: string | null; firstName: string; lastName: string }, xp: Map<string, number>): LeagueMember {
-  const u = toPerson(row);
+/** League and group rows: display name and XP only (KTD10). */
+const memberSelect = { id: true, firstName: true, lastName: true } as const;
+
+function toMember(u: { id: string; firstName: string; lastName: string }, xp: Map<string, number>): LeagueMember {
   return { id: u.id, name: `${u.firstName} ${u.lastName}`, weeklyXp: xp.get(u.id) ?? 0 };
 }
 
 export async function getLeague(db: Db, userId: string, now = new Date()) {
   const me = await db.user.findUniqueOrThrow({ where: { id: userId }, select: { leagueName: true } });
-  const users = await db.user.findMany({ where: { leagueName: me.leagueName, ...onboarded }, select: personSelect });
+  const users = await db.user.findMany({ where: { leagueName: me.leagueName, ...onboarded }, select: memberSelect });
   const xp = await weeklyXpByUser(db, users.map((u) => u.id), now);
   const standings = leagueStandings(users.map((u) => toMember(u, xp)));
   return { name: me.leagueName, daysLeft: leagueDaysLeft(now), standings, window: standingsWindow(standings, userId) };
@@ -31,7 +33,7 @@ export async function getLeague(db: Db, userId: string, now = new Date()) {
 export async function getGroupStandings(db: Db, userId: string, now = new Date()) {
   const groups = await db.studyGroup.findMany({
     where: { members: { some: { userId } } },
-    include: { members: { where: { user: onboarded }, include: { user: { select: personSelect } } } },
+    include: { members: { where: { user: onboarded }, include: { user: { select: memberSelect } } } },
     orderBy: { createdAt: "asc" },
   });
   const ids = [...new Set(groups.flatMap((g) => g.members.map((m) => m.userId)))];

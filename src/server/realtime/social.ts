@@ -8,7 +8,7 @@ import { userRoom } from "./types";
 export async function notifySocialChanged(db: Db, userIds: string[]) {
   const io = getIo();
   if (!io) return;
-  for (const id of new Set(userIds)) io.to(userRoom(id)).emit("social:changed", { received: await receivedCount(db, id) });
+  await Promise.all([...new Set(userIds)].map(async (id) => io.to(userRoom(id)).emit("social:changed", { received: await receivedCount(db, id) })));
 }
 
 /** New friends see each other's presence without a reload (R22). Only on accept: a pending request reveals nothing. */

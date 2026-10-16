@@ -2,7 +2,8 @@
  * Typed Socket.IO contract shared by server.ts and the browser (U4).
  * Payload drift between the two sides fails `npm run typecheck`.
  */
-import type { CaseType, Difficulty, Role, SessionStatus } from "@/lib/types";
+import type { AuthMethod } from "@/lib/auth/session-cookie";
+import type { CaseType, Difficulty, NodeStatus, Role, SessionStatus } from "@/lib/types";
 
 export type Ack<T = object> = (res: ({ ok: true } & T) | { ok: false; error: string }) => void;
 
@@ -42,7 +43,7 @@ export type InterviewerCaseView = {
     label: string;
     isCorrectPath: boolean;
     order: number;
-    status: "ACTIVE_BRANCH" | "ELIMINATED_BRANCH" | "ROOT_CAUSE";
+    status: NodeStatus;
     formula: string | null;
   }>;
 };
@@ -134,4 +135,4 @@ export type ClientToServerEvents = {
   "session:close": (p: { sessionId: string }, ack: Ack) => void;
 };
 
-export type SocketData = { userId: string; method: "google" | "dev" };
+export type SocketData = { userId: string; method: AuthMethod };

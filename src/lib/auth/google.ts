@@ -7,7 +7,7 @@
  */
 import * as oidc from "openid-client";
 import { z } from "zod";
-import { sign, signatureMatches } from "./session-cookie";
+import { sessionCookieOptions, sign, signatureMatches } from "./session-cookie";
 
 const GOOGLE = {
   issuer: "https://accounts.google.com",
@@ -80,7 +80,7 @@ export type GoogleErrorCode = (typeof GOOGLE_ERROR_CODES)[number];
 
 /** State, nonce and PKCE verifier for one sign-in attempt, HMAC-signed so another localhost port can't plant one. */
 export const OAUTH_COOKIE = "lc_oauth";
-export const oauthCookieOptions = { httpOnly: true, sameSite: "lax" as const, path: "/login/google", maxAge: 600, secure: false };
+export const oauthCookieOptions = { ...sessionCookieOptions, path: "/login/google", maxAge: 600 };
 
 type Pending = { state: string; nonce: string; verifier: string };
 

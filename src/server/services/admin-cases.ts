@@ -1,5 +1,7 @@
 import { z } from "zod";
+import type { CaseItem } from "@prisma/client";
 import type { Db } from "@/lib/db";
+import { itemNodeKeys, keysFromJson, keysToJson } from "@/lib/node-keys";
 import { validateTree } from "@/lib/rules/tree";
 import { caseInput, caseItemInput, CASE_ITEM_KINDS, transcriptTurnInput, treeNodeInput, type CaseItemKind } from "@/lib/types";
 import { writeTree } from "@/server/seed-runner";
@@ -49,18 +51,18 @@ export type SavedCaseItem = {
   gateNudge: string | null;
 };
 
-export function toSavedItem(i: { id: string; text: string; category: string | null; nodeKey: string | null; gatePrereqKeys: string | null; gateTrigger: string | null; gateAntiLeak: string | null; gateNudge: string | null }): SavedCaseItem {
-  return { ...i, gatePrereqKeys: parseKeys(i.gatePrereqKeys) };
-}
-
-function parseKeys(json: string | null): string[] {
-  if (!json) return [];
-  try {
-    const v = JSON.parse(json);
-    return Array.isArray(v) ? v.filter((x): x is string => typeof x === "string") : [];
-  } catch {
-    return [];
-  }
+/** Only the editor's fields leave the server; ids, kinds and import metadata stay behind. */
+export function toSavedItem(i: Pick<CaseItem, "id" | "text" | "category" | "nodeKey" | "gatePrereqKeys" | "gateTrigger" | "gateAntiLeak" | "gateNudge">): SavedCaseItem {
+  return {
+    id: i.id,
+    text: i.text,
+    category: i.category,
+    nodeKey: i.nodeKey,
+    gatePrereqKeys: keysFromJson(i.gatePrereqKeys),
+    gateTrigger: i.gateTrigger,
+    gateAntiLeak: i.gateAntiLeak,
+    gateNudge: i.gateNudge,
+  };
 }
 
 /** Every live fact and recommendation that points into the tree, for validateTree (R25). */
@@ -70,7 +72,7 @@ async function treeReferences(db: Db, caseId: string) {
     select: { text: true, nodeKey: true, gatePrereqKeys: true },
   });
   return items
-    .map((i) => ({ label: i.text.length > 60 ? `${i.text.slice(0, 57)}...` : i.text, keys: [...(i.nodeKey ? [i.nodeKey] : []), ...parseKeys(i.gatePrereqKeys)] }))
+    .map((i) => ({ label: i.text.length > 60 ? `${i.text.slice(0, 57)}...` : i.text, keys: itemNodeKeys(i.nodeKey, keysFromJson(i.gatePrereqKeys)) }))
     .filter((r) => r.keys.length > 0);
 }
 
@@ -87,7 +89,7 @@ export async function saveCaseItems(db: Db, caseId: string, kind: string, input:
   if (rich) {
     const keys = new Set((await db.issueTreeNode.findMany({ where: { caseId }, select: { key: true } })).map((n) => n.key));
     for (const item of items) {
-      const refs = [...(item.nodeKey ? [item.nodeKey] : []), ...(item.gatePrereqKeys ?? [])];
+      const refs = itemNodeKeys(item.nodeKey, item.gatePrereqKeys ?? []);
       const missing = refs.find((k) => !keys.has(k));
       if (missing) throw new ServiceError(`"${item.text.slice(0, 40)}" points at a node that isn't in the tree`);
     }
@@ -97,7 +99,7 @@ export async function saveCaseItems(db: Db, caseId: string, kind: string, input:
       ? {
           category: item.category || null,
           nodeKey: item.nodeKey || null,
-          gatePrereqKeys: rich === "fact" && item.gatePrereqKeys?.length ? JSON.stringify(item.gatePrereqKeys) : null,
+          gatePrereqKeys: rich === "fact" ? keysToJson(item.gatePrereqKeys) : null,
           gateTrigger: rich === "fact" ? item.gateTrigger || null : null,
           gateAntiLeak: rich === "fact" ? item.gateAntiLeak || null : null,
           gateNudge: rich === "fact" ? item.gateNudge || null : null,

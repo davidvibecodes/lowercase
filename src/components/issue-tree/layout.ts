@@ -1,4 +1,5 @@
 import dagre from "@dagrejs/dagre";
+import type { NodeStatus } from "@/lib/types";
 
 /** `id`/`parentId` are the node's stable keys (KTD11). */
 export type TreeNodeData = {
@@ -7,7 +8,7 @@ export type TreeNodeData = {
   label: string;
   isCorrectPath: boolean;
   order: number;
-  status?: "ACTIVE_BRANCH" | "ELIMINATED_BRANCH" | "ROOT_CAUSE";
+  status?: NodeStatus;
   formula?: string | null;
 };
 export type PositionedNode = TreeNodeData & { x: number; y: number; width: number; height: number };

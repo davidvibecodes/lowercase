@@ -20,8 +20,8 @@ export type FactCategory = (typeof FACT_CATEGORIES)[number];
 export const NODE_STATUSES = ["ACTIVE_BRANCH", "ELIMINATED_BRANCH", "ROOT_CAUSE"] as const;
 export type NodeStatus = (typeof NODE_STATUSES)[number];
 
-export const SOCIAL_STATUSES = ["PENDING", "ACCEPTED", "DECLINED", "CANCELLED"] as const;
-export type SocialStatus = (typeof SOCIAL_STATUSES)[number];
+/** Largest casebank file the import accepts, checked in the browser and again by the route. */
+export const CASEBANK_MAX_BYTES = 2 * 1024 * 1024;
 
 export const SPEAKERS = ["interviewer", "candidate"] as const;
 export type Speaker = (typeof SPEAKERS)[number];
