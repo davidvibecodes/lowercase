@@ -62,7 +62,7 @@ Admin works the same way as locally: only a Google sign-in as `davidsathyandevic
 ## 3. After it is up
 
 - `https://trylowercase.app/healthz` should say `ok`. `/login` should show only "Continue with Google".
-- Sign in with `davidsathyandevice@gmail.com`, choose a username, and open Admin. Import a casebank there if you have your own. **Do not import the licensed casebook on the public site unless you hold the rights.**
+- Sign in with `davidsathyandevice@gmail.com`, choose a username, and open Admin. Import your casebank there (Admin → Cases → Import). The only licensed content in the repo is the seeded "Diagnostic Center – Mumbai" case, which a hosted seed leaves out.
 - Copy a backup off the machine now and then. The daily copies sit on the same disk, so they cover a bad migration or a mistake but not losing the disk. They are in `/data/backups/` (`lowercase-<timestamp>.db`). On the VM, `docker compose cp app:/data/backups ./backups` pulls them out. On Railway, use the volume's backup feature.
 
 ## Known limits of a public site
