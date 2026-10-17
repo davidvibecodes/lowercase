@@ -2,7 +2,6 @@
  * Typed Socket.IO contract shared by server.ts and the browser (U4).
  * Payload drift between the two sides fails `npm run typecheck`.
  */
-import type { AuthMethod } from "@/lib/auth/session-cookie";
 import type { CaseType, Difficulty, NodeStatus, Role, SessionStatus } from "@/lib/types";
 
 export type Ack<T = object> = (res: ({ ok: true } & T) | { ok: false; error: string }) => void;
@@ -109,8 +108,11 @@ export type ServerToClientEvents = {
   "session:state": (view: SessionView) => void;
   "session:closed": (p: { sessionId: string; by: PersonRef | null }) => void;
   "notepad:sync": (p: { sessionId: string; round: number; content: string }) => void;
-  /** Friend requests or group invites changed for this user (R18); carries their Received count. */
-  "social:changed": (p: { received: number }) => void;
+  /**
+   * Friend requests or group invites changed for this user (R18); carries their Received count.
+   * `resync` marks the copy sent on every (re)connect, which may carry no change at all.
+   */
+  "social:changed": (p: { received: number; resync?: boolean }) => void;
 };
 
 export type SolvePayload = { sessionId: string; scores: Array<{ criterion: string; score: number; notes: string }> };
@@ -135,4 +137,4 @@ export type ClientToServerEvents = {
   "session:close": (p: { sessionId: string }, ack: Ack) => void;
 };
 
-export type SocketData = { userId: string; method: AuthMethod };
+export type SocketData = { userId: string };

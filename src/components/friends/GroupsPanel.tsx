@@ -18,26 +18,36 @@ type MyGroup = { id: string; name: string; owned: boolean; standings: Standing[]
 export function GroupsPanel({ userId, groups, friends }: { userId: string; groups: MyGroup[]; friends: PersonRef[] }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [results, setResults] = useState<GroupResult[] | null>(null);
+  // Results remember the term they answer; while a newer term is in flight the last list stays, but "no match" waits.
+  const [answer, setAnswer] = useState<{ term: string; groups: GroupResult[] } | null>(null);
   const [busy, start] = useTransition();
   const seq = useRef(0);
   const term = query.trim();
+  const termRef = useRef(term);
+  const results = term.length >= 2 ? (answer?.groups ?? null) : null;
+  const current = answer?.term === term;
 
   const lookup = async (q: string) => {
     const id = ++seq.current;
     const r = await searchGroupsAction(q);
-    if (id === seq.current) setResults(r);
+    if (id === seq.current) setAnswer({ term: q, groups: r });
   };
 
   useEffect(() => {
+    termRef.current = term;
     if (term.length < 2) {
       seq.current++;
-      setResults(null);
+      setAnswer(null);
       return;
     }
     const t = window.setTimeout(() => void lookup(term), 250);
     return () => window.clearTimeout(t);
   }, [term]);
+
+  /** Re-runs the search for whatever is typed now, not the term at click time. */
+  const refreshSearch = async () => {
+    if (termRef.current.length >= 2) await lookup(termRef.current);
+  };
 
   const act = (fn: () => Promise<{ ok: boolean; error?: string }>, ok: string, after?: () => Promise<void>) =>
     start(async () => {
@@ -67,7 +77,7 @@ export function GroupsPanel({ userId, groups, friends }: { userId: string; group
 
       {results !== null ? (
         <section aria-label="Group search results">
-          {results.length === 0 && <p className="text-muted">No groups match “{term}”.</p>}
+          {results.length === 0 && current && <p className="text-muted">No groups match “{term}”.</p>}
           <ul className="space-y-2.5">
             {results.map((g) => (
               <li key={g.id} className="flex items-center gap-3 rounded-3xl border border-line bg-surface px-4 py-3">
@@ -80,7 +90,7 @@ export function GroupsPanel({ userId, groups, friends }: { userId: string; group
                 {g.isMember ? (
                   <span className="text-sm font-bold text-emerald">Joined</span>
                 ) : (
-                  <Button size="sm" variant="secondary" disabled={busy} onClick={() => act(() => joinGroupAction(g.id), `You joined ${g.name}`, () => lookup(term))}>
+                  <Button size="sm" variant="secondary" disabled={busy} onClick={() => act(() => joinGroupAction(g.id), `You joined ${g.name}`, refreshSearch)}>
                     Join
                   </Button>
                 )}

@@ -15,6 +15,16 @@ export const DEV_LOGIN_USERNAMES = [DEV_OWNER_USERNAME, "roy", "mihaela", "ankit
 
 export const isDevLoginUsername = (name: string): boolean => (DEV_LOGIN_USERNAMES as readonly string[]).includes(name);
 
+/**
+ * A test-login cookie stays good only while the test login would still admit
+ * its account: AUTH_MODE is dev and the account has never signed in with
+ * Google. Checked on every request and socket handshake, not just at sign-in,
+ * so a peer-tester tab can't keep a real friend's account open after they link it.
+ */
+export function devSessionAllowed(user: { googleSub: string | null }): boolean {
+  return devLoginEnabled() && user.googleSub === null;
+}
+
 /** Passwordless test login for seeded users. Refuses unless AUTH_MODE=dev; never admin. */
 export const devLoginProvider: AuthProvider = {
   id: "dev",

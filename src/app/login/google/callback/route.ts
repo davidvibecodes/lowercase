@@ -20,11 +20,17 @@ export async function GET(req: NextRequest) {
   if (!env) return fail("google_unconfigured");
   const result = await finishGoogleSignIn(env, req.nextUrl.searchParams, req.cookies.get(OAUTH_COOKIE)?.value);
   if (!result.ok) return fail(result.code);
-  const resolved = await resolveGoogleUser(db, result.claims);
-  if (!resolved.ok) return fail(resolved.code);
+  try {
+    const resolved = await resolveGoogleUser(db, result.claims);
+    if (!resolved.ok) return fail(resolved.code);
 
-  // A user without a username lands on the onboarding step via requireUser (R7).
-  const res = done("/");
-  res.cookies.set(SESSION_COOKIE, createSessionValue(resolved.user.id, "google"), sessionCookieOptions);
-  return res;
+    // A user without a username lands on the onboarding step via requireUser (R7).
+    const res = done("/");
+    res.cookies.set(SESSION_COOKIE, createSessionValue(resolved.user.id, "google"), sessionCookieOptions);
+    return res;
+  } catch (e) {
+    // A database error (or a missing AUTH_SECRET) still ends on the login page, with the one-time cookie cleared.
+    console.error("[google] sign-in callback failed", e);
+    return fail("google_failed");
+  }
 }

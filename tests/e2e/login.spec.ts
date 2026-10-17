@@ -36,7 +36,7 @@ test("the owner is admin through Google; a test-login peer can't reach the CMS",
   await roy.ctx.close();
 });
 
-test("once the owner has signed in with Google, the test login no longer offers his account", async ({ page }) => {
+test("once the owner has signed in with Google, the test login no longer offers their account", async ({ page }) => {
   await page.goto("/login");
   await expect(page.getByRole("button", { name: /Continue as davidsathyandevice/ })).toHaveCount(0);
 });

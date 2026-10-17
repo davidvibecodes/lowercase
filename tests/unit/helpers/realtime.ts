@@ -30,14 +30,18 @@ export async function startHarness(): Promise<Harness> {
   };
 }
 
-/** Connects as a user; resolves once connected (rejects on auth failure). */
+/**
+ * Connects as a user; resolves once the server has finished setting the
+ * connection up, i.e. after its connect-time `social:changed` resync, so a
+ * test's own `nextEvent` never catches that one (rejects on auth failure).
+ */
 export function connectAs(h: Harness, userId: string | null, before?: (c: Client) => void, extra: Record<string, string> = {}): Promise<Client> {
   const headers: Record<string, string> = { ...(userId ? { cookie: `lc_session=${encodeURIComponent(createSessionValue(userId, "dev"))}` } : {}), ...extra };
   const c: Client = connect(h.url, { transports: ["websocket"], extraHeaders: headers, reconnection: false, forceNew: true, autoConnect: false });
   h.clients.push(c);
   before?.(c);
   return new Promise((resolve, reject) => {
-    c.once("connect", () => resolve(c));
+    c.once("social:changed", () => resolve(c));
     c.once("connect_error", (e) => reject(e));
     c.connect();
   });

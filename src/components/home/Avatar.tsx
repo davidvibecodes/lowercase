@@ -7,9 +7,10 @@ const TONES = ["bg-royal-soft text-royal-bright", "bg-emerald-soft text-emerald"
 
 /** Google photo when there is one, initials otherwise or if the photo fails to load. */
 export function Avatar({ first, last, online, size = "md", src }: { first: string; last: string; online?: boolean; size?: "sm" | "md"; src?: string | null }) {
-  const [broken, setBroken] = useState(false);
+  // Remember which photo failed, not just that one did: the same Avatar can be handed another person's photo.
+  const [brokenSrc, setBrokenSrc] = useState<string | null>(null);
   const tone = TONES[(first.charCodeAt(0) + (last.charCodeAt(0) || 0)) % TONES.length];
-  const showPhoto = src && !broken;
+  const showPhoto = src && src !== brokenSrc;
   return (
     <span
       className={cn("relative inline-grid shrink-0 place-items-center rounded-full font-extrabold", !showPhoto && tone, size === "md" ? "size-10 text-sm" : "size-8 text-xs")}
@@ -17,7 +18,7 @@ export function Avatar({ first, last, online, size = "md", src }: { first: strin
     >
       {showPhoto ? (
         // eslint-disable-next-line @next/next/no-img-element -- a small remote avatar; next/image would need remotePatterns for one host
-        <img src={src} alt="" referrerPolicy="no-referrer" onError={() => setBroken(true)} className="size-full rounded-full object-cover" />
+        <img src={src} alt="" referrerPolicy="no-referrer" onError={() => setBrokenSrc(src)} className="size-full rounded-full object-cover" />
       ) : (
         <>
           {first[0]}

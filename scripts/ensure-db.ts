@@ -54,15 +54,18 @@ const db = new PrismaClient();
  * has users, write a consistent copy; VACUUM INTO also captures the WAL.
  */
 async function backupBeforeMigrating() {
+  // Only a missing table means "nothing to protect". Any other error (a locked file, say) stops here,
+  // because migrating without the backup would leave no way back.
+  const missingTable = (e: unknown) => (/no such table/i.test(String((e as Error)?.message ?? e)) ? null : Promise.reject(e));
   const applied = await db
     .$queryRawUnsafe<{ migration_name: string }[]>(`SELECT migration_name FROM _prisma_migrations WHERE finished_at IS NOT NULL`)
-    .catch(() => null);
+    .catch(missingTable);
   if (!applied) return null; // fresh database: nothing to protect
   const done = new Set(applied.map((r) => r.migration_name));
   const pending = readdirSync(resolve(root, "prisma/migrations"), { withFileTypes: true }).filter((d) => d.isDirectory() && !done.has(d.name));
   if (!pending.length) return null;
-  const users = await db.$queryRawUnsafe<{ n: number | bigint }[]>(`SELECT count(*) AS n FROM "User"`).catch(() => [{ n: 0 }]);
-  if (Number(users[0]?.n ?? 0) === 0) return null;
+  const users = await db.$queryRawUnsafe<{ n: number | bigint }[]>(`SELECT count(*) AS n FROM "User"`).catch(missingTable);
+  if (!users || Number(users[0]?.n ?? 0) === 0) return null;
   const dir = resolve(root, "prisma/backups");
   mkdirSync(dir, { recursive: true });
   const file = resolve(dir, `dev-${new Date().toISOString().replace(/[:.]/g, "-")}.db`);
@@ -71,7 +74,11 @@ async function backupBeforeMigrating() {
   return file;
 }
 
-const backup = await backupBeforeMigrating();
+const backup = await backupBeforeMigrating().catch(async (e) => {
+  console.error("[ensure-db] couldn't check or back up the database before migrating, so nothing was migrated:", e);
+  await db.$disconnect();
+  process.exit(1);
+});
 await db.$disconnect();
 
 const deployed = spawnSync(process.execPath, [prismaCli, "migrate", "deploy"], { cwd: root, stdio: "inherit", env: process.env });

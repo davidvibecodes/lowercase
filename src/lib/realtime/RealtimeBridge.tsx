@@ -27,9 +27,12 @@ export function RealtimeBridge({ initialOnline, initialReceived }: { initialOnli
     const onSnapshot = (ids: string[]) => usePresence.getState().setSnapshot(ids);
     const onUpdate = (p: { userId: string; online: boolean }) => usePresence.getState().setOnline(p.userId, p.online);
     // A request or invite changed for me: update the badge everywhere, refresh only pages that list friends (R18, KTD9).
-    const onSocial = (p: { received: number }) => {
+    // On (re)connect the server resends the count, since changes made while the socket was down were missed;
+    // that resync refreshes only when the count moved, so an ordinary page load doesn't refresh twice.
+    const onSocial = (p: { received: number; resync?: boolean }) => {
+      const moved = p.received !== useSocial.getState().received;
       useSocial.getState().setReceived(p.received);
-      if (pathRef.current === "/" || pathRef.current === "/friends") router.refresh();
+      if ((moved || !p.resync) && (pathRef.current === "/" || pathRef.current === "/friends")) router.refresh();
     };
     if (s.connected) onConnect();
     s.on("connect", onConnect);

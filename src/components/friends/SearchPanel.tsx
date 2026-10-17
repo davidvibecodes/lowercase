@@ -11,22 +11,26 @@ import type { PersonResult } from "@/server/services/social";
 /** Find people only by their exact username (R17); an empty search shows a prompt, never a list. */
 export function SearchPanel({ username }: { username: string }) {
   const [query, setQuery] = useState("");
-  const [result, setResult] = useState<PersonResult | null | undefined>(undefined);
+  // Each answer remembers the term it answers, so an old answer never shows under a newer term.
+  const [answer, setAnswer] = useState<{ term: string; result: PersonResult | null } | null>(null);
   const [busy, start] = useTransition();
   const [copied, setCopied] = useState(false);
   const seq = useRef(0);
   const term = query.trim().replace(/^@/, "");
+  const termRef = useRef(term);
+  const result = answer?.term === term ? answer.result : undefined;
 
   const lookup = async (q: string) => {
     const id = ++seq.current;
     const r = await searchPeopleAction(q);
-    if (id === seq.current) setResult(r);
+    if (id === seq.current) setAnswer({ term: q, result: r });
   };
 
   useEffect(() => {
+    termRef.current = term;
     if (!term) {
       seq.current++;
-      setResult(undefined);
+      setAnswer(null);
       return;
     }
     const t = window.setTimeout(() => void lookup(term), 300);
@@ -38,7 +42,8 @@ export function SearchPanel({ username }: { username: string }) {
       const r = await fn();
       if (!r.ok) toast(r.error ?? "Something went wrong", "warning");
       else toast(ok, "success");
-      await lookup(term);
+      // Refresh whatever is typed now, not the term at click time.
+      if (termRef.current) await lookup(termRef.current);
     });
 
   const copy = async () => {
@@ -79,6 +84,12 @@ export function SearchPanel({ username }: { username: string }) {
             <span className="sr-only">{copied ? "Copied" : "Copy your username"}</span>
           </button>
         </div>
+      )}
+
+      {term && result === undefined && (
+        <p className="mt-6 text-faint" role="status">
+          Searching…
+        </p>
       )}
 
       {term && result === null && (

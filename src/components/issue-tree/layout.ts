@@ -1,7 +1,10 @@
 import dagre from "@dagrejs/dagre";
 import type { NodeStatus } from "@/lib/types";
 
-/** `id`/`parentId` are the node's stable keys (KTD11). */
+/**
+ * `id`/`parentId` only need to agree within one tree: the CMS editor passes stable
+ * node keys (KTD11), the live session view passes row ids.
+ */
 export type TreeNodeData = {
   id: string;
   parentId: string | null;

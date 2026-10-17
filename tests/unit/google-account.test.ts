@@ -33,7 +33,7 @@ describe("resolveGoogleUser (KTD4)", () => {
     });
   });
 
-  it("links the seeded owner by verified email and keeps his username and history", async () => {
+  it("links the seeded owner by verified email and keeps their username and history", async () => {
     const owner = await userId("davidsathyandevice");
     const xp = (await db.user.findUniqueOrThrow({ where: { id: owner } })).xp;
     const r = await resolveGoogleUser(db, claims({ sub: "g-owner", email: "DavidSathyanDevice@gmail.com", name: "David Sathyan" }));

@@ -79,7 +79,7 @@ lowercase works today only for whoever sits at the machine, and every account is
 
 - R3. `/login` offers "Continue with Google" as the primary way in. Signing in captures the Google account's email, name and avatar.
 - R4. When `AUTH_MODE=dev`, the existing passwordless test login stays available below the Google button, including the peer-tester option. It never grants admin.
-- R5. Accounts are tied to the Google account itself, not to the email address. A first Google sign-in whose verified email matches an existing unlinked account links to it, so the owner keeps his history. Email is no longer editable in Settings.
+- R5. Accounts are tied to the Google account itself, not to the email address. A first Google sign-in whose verified email matches an existing unlinked account links to it, so the owner keeps their history. Email is no longer editable in Settings.
 - R6. If the Google client isn't configured, the login page explains what to add to `.env` instead of failing, and the dev test login keeps working.
 
 **Username onboarding**
@@ -132,16 +132,16 @@ lowercase works today only for whoever sits at the machine, and every account is
 
 ### Acceptance Examples
 
-- AE1. **Covers R10.** Given Ana and Ben both see "✓ Username is available" for `alex`, when Ana saves first and then Ben saves, Ben sees "✗ Username is already taken", his input stays, and only one account holds `alex`.
-- AE2. **Covers R11, R4.** Given the owner signs in through the dev test login before his account is linked to Google, when he opens `/admin`, he is redirected home and no Admin tab shows. Once linked, the dev login refuses his account. Given he signs in with Google as `davidsathyandevice@gmail.com`, the Admin tab shows and `/admin` opens.
+- AE1. **Covers R10.** Given Ana and Ben both see "✓ Username is available" for `alex`, when Ana saves first and then Ben saves, Ben sees "✗ Username is already taken", their input stays, and only one account holds `alex`.
+- AE2. **Covers R11, R4.** Given the owner signs in through the dev test login before their account is linked to Google, when they open `/admin`, they are redirected home and no Admin tab shows. Once linked, the dev login refuses their account. Given they sign in with Google as `davidsathyandevice@gmail.com`, the Admin tab shows and `/admin` opens.
 - AE3. **Covers R19.** Given Roy has a pending request to Mihaela, when Mihaela searches `roy` and clicks "Add friend", they become friends and Roy's request leaves Roy's Sent.
-- AE4. **Covers R19.** Given Ankit cancelled his request to David, when David clicks Accept on the still-visible item, David sees "This request is no longer open" and the list refreshes.
+- AE4. **Covers R19.** Given Ankit cancelled their request to David, when David clicks Accept on the still-visible item, David sees "This request is no longer open" and the list refreshes.
 - AE5. **Covers R24.** Given the 4-case casebank was imported and Roy revealed fact `F_001_04` in a session, when the owner imports the same file again, the preview shows 4 updates and 0 creates. Afterwards Roy's reveal record still points at that fact.
 - AE6. **Covers R26.** Given an interviewer and interviewee in a Delhi Metro session, the interviewer's fact `F_001_06` shows its trigger, its prerequisite node labels and its don't-leak warning. The interviewee's socket payload contains none of those fields.
 
 ### Success Criteria
 
-- The owner can run the casebank's Delhi Metro case at his machine with a real friend who signed in with their own Google account in a private window. Neither of them used a seeded login.
+- The owner can run the casebank's Delhi Metro case at their machine with a real friend who signed in with their own Google account in a private window. Neither of them used a seeded login.
 - Nothing in the app lists a user the viewer has neither friended nor searched for by exact handle, with three exceptions (KTD10). The league shows names without handles. A group the viewer chose to join shows its members' names. Group search results show the owner's display name, without a handle.
 
 ### Scope Boundaries
@@ -478,7 +478,7 @@ U12 runs last.
     - A cookie in the old format (userId.issued.sig) fails verification.
     - Editing the method from `dev` to `google` breaks the signature.
     - A missing or unknown method is rejected.
-  - **Dev login:** it refuses an account that has a `googleSub`, and one created through Google. It also refuses the owner once his row is linked to Google.
+  - **Dev login:** it refuses an account that has a `googleSub`, and one created through Google. It also refuses the owner once their row is linked to Google.
   - **Settings:** a Google user who submits `DavidSathyanDevice@gmail.com` in the account form keeps their own email and stays non-admin.
   - **Onboarding gate:**
     - `requireUser` for a user with a null username redirects to `/onboarding/username`. `requireSignedIn` returns that user.
@@ -512,7 +512,7 @@ U12 runs last.
   - **User resolution:** `resolveGoogleUser(db, claims)` holds the linking rules (KTD4) and returns the user or a refusal code.
   - **Claims:** a zod schema parses them.
   - **Unconfigured client:** with the Google env vars unset, the start route redirects to `/login?error=google_unconfigured`, and the page shows the setup hint (R6) with the button disabled.
-  - **Login page:** the Google button comes first. The dev section renders only when `AUTH_MODE=dev`, and is labelled "Testing". It lists only the accounts the dev login would admit right now (KTD5), so the owner's prefilled button disappears once his account is linked, and the section hides when nothing is left.
+  - **Login page:** the Google button comes first. The dev section renders only when `AUTH_MODE=dev`, and is labelled "Testing". It lists only the accounts the dev login would admit right now (KTD5), so the owner's prefilled button disappears once their account is linked, and the section hides when nothing is left.
 - **Patterns to follow:** `NextResponse` cookie handling as in today's `src/app/login/as/[username]/route.ts`; `src/lib/auth/session-cookie.ts` for options and `sign()`.
 - **Test scenarios:**
   - **New user:** a new `sub` with a new verified email creates a user with a null username, `googleSub` set, the avatar stored and the email lowercased.
@@ -625,7 +625,7 @@ U12 runs last.
     - A bot's username returns nothing.
     - Searching your own username returns nothing.
   - **Sending requests:**
-    - Mihaela sends to Ankit, after their seeded friendship is removed. One PENDING row exists, it shows in her sent list and Ankit's received list, and Ankit's received count is 1.
+    - Mihaela sends to Ankit, after their seeded friendship is removed. One PENDING row exists, it shows in Mihaela's sent list and Ankit's received list, and Ankit's received count is 1.
     - Sending twice is idempotent: still one open row.
     - Covers AE3. A reverse send while a request is pending accepts it, and both `Friendship` directions exist.
     - Two opposite sends started concurrently end with the pair as friends and no PENDING row left.
@@ -789,7 +789,7 @@ U12 runs last.
 - **Dependencies:** U4–U11.
 - **Files:** `scripts/e2e-server.ts` (starts the fake IdP and sets the Google env vars), `tests/e2e/helpers.ts` (`loginGoogle(persona)` alongside `loginPeer`), `tests/e2e/login.spec.ts`, `tests/e2e/admin.spec.ts`, `tests/e2e/onboarding.spec.ts` (new), `tests/e2e/friends.spec.ts` (new, from U8), `tests/e2e/settings.spec.ts` (new, for sound), `README.md`.
 - **Approach:**
-  - **Admin specs:** e2e signs the owner in only through the fake IdP, so the real Google path is exercised. Peer flows keep the dev login on the second host. A Google sign-in links the owner's row, which closes his dev login (KTD5). So "dev-login owner isn't admin" stays a unit test in U3, and existing specs that dev-login the owner switch to `loginGoogle`.
+  - **Admin specs:** e2e signs the owner in only through the fake IdP, so the real Google path is exercised. Peer flows keep the dev login on the second host. A Google sign-in links the owner's row, which closes their dev login (KTD5). So "dev-login owner isn't admin" stays a unit test in U3, and existing specs that dev-login the owner switch to `loginGoogle`.
   - **README:** documents the Google setup, the test login's limits, onboarding, friend requests and the casebank import. It covers:
     - The Google client's audience stays External in Testing status, and the owner's and each friend's Google address go on its test-user list before they sign in. Testing status allows up to 100 users, needs no verification for `openid email profile`, and its refresh-token limit doesn't apply.
     - A friend practising on the owner's machine signs in with Google in a separate private window, closed after the session, never in the owner's browser profile. Google sign-in is pinned to one host (KTD2), so two Google users need separate cookie jars. A shared profile would also offer the owner's admin Google account in the account chooser.
@@ -869,7 +869,7 @@ U12 runs last.
 | Build and browser tests | `npm run test:e2e` (builds first, runs Playwright on port 3100 with the fake IdP) | U4, U5, U6, U8, U12 |
 | Migration safety | The replay test in `tests/unit/migration.test.ts` passes. On a copy of `prisma/dev.db`, the checks listed in U2's Verification and replay test all hold. The migration SQL rebuilds only `User` and `IssueTreeNode`. | U2 |
 | Secret scan | A history and tree scan for secret patterns finds nothing. `git check-ignore` behaves per U1. | U1 |
-| Real Google (manual, owner) | With a real client in `.env`, the owner signs in at `http://localhost:3000`, lands home as admin, and keeps his XP and history. | U4 |
+| Real Google (manual, owner) | With a real client in `.env`, the owner signs in at `http://localhost:3000`, lands home as admin, and keeps their XP and history. | U4 |
 | Real casebank (manual, owner) | Importing the 4-case JSON previews 4 creates and then 4 updates on a second run. The Delhi Metro session shows guidance to the interviewer only. The owner reads each imported case's derived hints in the CMS and confirms none is addressed to the interviewer or gives away what its fact's don't-leak rule protects. | U10, U11 |
 
 ---

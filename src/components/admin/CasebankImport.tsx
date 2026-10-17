@@ -49,9 +49,11 @@ export function CasebankImport() {
     if (!file) return;
     setFileName(file.name);
     if (file.size > CASEBANK_MAX_BYTES) return setState({ step: "error", errors: ["The file is larger than 2 MB."] });
+    setBusy(true);
     try {
       doc.current = JSON.parse(await file.text());
     } catch {
+      setBusy(false);
       return setState({ step: "error", errors: ["That file isn't valid JSON."] });
     }
     await run(true);
@@ -73,7 +75,19 @@ export function CasebankImport() {
         </p>
         <p className="mt-2 text-xs text-faint">The file is read in your browser and sent only to this app. Keep licensed casebanks out of git, e.g. in content/private/.</p>
         <div className="mt-5 flex flex-wrap items-center gap-3">
-          <input type="file" accept="application/json,.json" className="sr-only" id="casebank-file" disabled={busy} onChange={(e) => void pick(e.target.files?.[0])} />
+          <input
+            type="file"
+            accept="application/json,.json"
+            className="sr-only"
+            id="casebank-file"
+            disabled={busy}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              // Clear the control so choosing the same file again (after fixing it) still fires a change.
+              e.target.value = "";
+              void pick(file);
+            }}
+          />
           <label
             htmlFor="casebank-file"
             aria-disabled={busy}

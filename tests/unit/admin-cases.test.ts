@@ -19,6 +19,18 @@ describe("admin cases", () => {
     expect(nodes.find((n) => n.label === "Revenue")!.isCorrectPath).toBe(true);
   });
 
+  it("keeps sibling order even when a child is listed before its parent", async () => {
+    const c = await admin.createCase(db, { title: "Order case", caseType: "Pricing", difficulty: 1, problemStatement: "Price it.", published: true });
+    await admin.saveTree(db, c.id, [
+      { key: "a", parentKey: "r", label: "Revenue", isCorrectPath: true },
+      { key: "r", parentKey: null, label: "Profit", isCorrectPath: true },
+      { key: "b", parentKey: "r", label: "Cost", isCorrectPath: false },
+      { key: "c", parentKey: "r", label: "Volume", isCorrectPath: false },
+    ]);
+    const rows = await db.issueTreeNode.findMany({ where: { caseId: c.id, parentId: { not: null } }, orderBy: { order: "asc" } });
+    expect(rows.map((n) => n.label)).toEqual(["Revenue", "Cost", "Volume"]);
+  });
+
   it("refuses an invalid tree and keeps the old one", async () => {
     const c = await db.case.findFirstOrThrow({ where: { title: "Diagnostic Center – Mumbai" } });
     await expect(admin.saveTree(db, c.id, [{ key: "x", parentKey: null, label: "", isCorrectPath: false }])).rejects.toThrow("Every node needs a label");

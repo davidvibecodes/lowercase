@@ -54,6 +54,25 @@ describe("onboarding gate (R7)", () => {
   });
 });
 
+describe("test-login sessions (KTD5)", () => {
+  it("stop opening the account once it links Google or the test login is turned off", async () => {
+    as(roy, "dev");
+    expect((await guards.getCurrentUser())?.id).toBe(roy);
+
+    vi.stubEnv("AUTH_MODE", "");
+    try {
+      expect(await guards.getCurrentUser()).toBeNull();
+    } finally {
+      vi.unstubAllEnvs();
+    }
+
+    await db.user.update({ where: { id: roy }, data: { googleSub: "g-roy" } });
+    expect(await guards.getCurrentUser()).toBeNull();
+    as(roy, "google");
+    expect((await guards.getCurrentUser())?.id).toBe(roy);
+  });
+});
+
 describe("admin pages and actions (R12, R13)", () => {
   it("redirects non-admins and dev-login sessions home", async () => {
     as(roy);

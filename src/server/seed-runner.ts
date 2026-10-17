@@ -59,10 +59,18 @@ export async function createConcept(tx: Tx, seed: ConceptSeed, order: number) {
   });
 }
 
-/** Inserts tree rows parent-first and returns the key → id map. */
+/** Inserts tree rows parent-first and returns the key → id map. Siblings keep their input order. */
 export async function writeTree(tx: Tx, caseId: string, nodes: TreeNodeInput[]) {
   const ids = new Map<string, string>();
+  // Sibling order comes from input order, worked out up front: insertion runs in passes, and a
+  // child listed before its parent is placed a pass later than siblings listed after the parent.
+  const orderOf = new Map<string, number>();
   const siblingsSeen = new Map<string | null, number>();
+  for (const node of nodes) {
+    const order = siblingsSeen.get(node.parentKey) ?? 0;
+    siblingsSeen.set(node.parentKey, order + 1);
+    orderOf.set(node.key, order);
+  }
   const pending = [...nodes];
   let guard = nodes.length + 1;
   while (pending.length && guard-- > 0) {
@@ -72,8 +80,6 @@ export async function writeTree(tx: Tx, caseId: string, nodes: TreeNodeInput[]) 
         i++;
         continue;
       }
-      const order = siblingsSeen.get(node.parentKey) ?? 0;
-      siblingsSeen.set(node.parentKey, order + 1);
       const row = await tx.issueTreeNode.create({
         data: {
           caseId,
@@ -83,7 +89,7 @@ export async function writeTree(tx: Tx, caseId: string, nodes: TreeNodeInput[]) 
           isCorrectPath: node.isCorrectPath,
           status: node.status ?? "ACTIVE_BRANCH",
           formula: node.formula ?? null,
-          order,
+          order: orderOf.get(node.key)!,
         },
       });
       ids.set(node.key, row.id);

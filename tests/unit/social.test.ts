@@ -6,6 +6,7 @@ import {
   createGroup,
   joinGroup,
   leaveGroup,
+  listFriends,
   listSocial,
   receivedCount,
   respondToFriendRequest,
@@ -14,7 +15,7 @@ import {
   searchPeople,
   sendFriendRequest,
 } from "@/server/services/social";
-import { getGroupStandings } from "@/server/services/home";
+import { getGroupStandings, getHomeData, getLeague } from "@/server/services/home";
 import { db, resetAndSeed, userId } from "./helpers/db";
 
 let david: string, roy: string, mihaela: string, ankit: string;
@@ -54,12 +55,43 @@ describe("searchPeople (R17)", () => {
     expect(await searchPeople(db, david, "Roy C")).toBeNull();
   });
 
-  it("never finds league bots, yourself or people without a username", async () => {
+  it("never finds league bots or yourself", async () => {
     const bot = await db.user.findFirstOrThrow({ where: { isLeagueBot: true } });
     expect(await searchPeople(db, david, bot.username!)).toBeNull();
     expect(await searchPeople(db, david, "davidsathyandevice")).toBeNull();
-    await db.user.create({ data: { firstName: "No", lastName: "Name", email: "nn@gmail.com" } });
-    expect(await db.user.count({ where: { username: null } })).toBe(1);
+  });
+});
+
+describe("people without a username (R7, KTD10)", () => {
+  it("stay out of the league, friend lists and group standings until they choose one", async () => {
+    // A Google newcomer gets the default league, so only the onboarded filters keep their name off other people's screens.
+    const { leagueName } = await db.user.findUniqueOrThrow({ where: { id: david }, select: { leagueName: true } });
+    const ghost = await db.user.create({ data: { firstName: "No", lastName: "Name", email: "nn@gmail.com", leagueName } });
+    await db.friendship.createMany({ data: [{ userId: david, friendId: ghost.id }, { userId: ghost.id, friendId: david }] });
+    const group = await db.studyGroup.findFirstOrThrow({ where: { members: { some: { userId: david } } } });
+    await db.groupMember.create({ data: { groupId: group.id, userId: ghost.id } });
+
+    const visible = async () => {
+      const [league, friends, social, home, groups] = await Promise.all([
+        getLeague(db, david),
+        listFriends(db, david),
+        listSocial(db, david),
+        getHomeData(db, david),
+        getGroupStandings(db, david),
+      ]);
+      return {
+        league: league.standings.some((s) => s.id === ghost.id),
+        friends: friends.some((f) => f.id === ghost.id),
+        socialFriends: social.friends.some((f) => f.id === ghost.id),
+        homeFriends: home.friends.some((f) => f.id === ghost.id),
+        group: groups.find((g) => g.id === group.id)!.standings.some((s) => s.id === ghost.id),
+      };
+    };
+    const everywhere = (on: boolean) => ({ league: on, friends: on, socialFriends: on, homeFriends: on, group: on });
+
+    expect(await visible()).toEqual(everywhere(false));
+    await db.user.update({ where: { id: ghost.id }, data: { username: "no.name" } });
+    expect(await visible()).toEqual(everywhere(true));
   });
 });
 

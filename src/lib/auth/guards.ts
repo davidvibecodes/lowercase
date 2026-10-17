@@ -6,6 +6,7 @@ import { cache } from "react";
 import { db } from "@/lib/db";
 import { loopbackOrigins } from "@/server/loopback";
 import { ServiceError } from "@/server/services/invites";
+import { devSessionAllowed } from "./dev-provider";
 import { toSessionUser, type SessionUser } from "./provider";
 import { SESSION_COOKIE, verifySessionValue } from "./session-cookie";
 
@@ -20,7 +21,8 @@ export const getCurrentUser = cache(async (): Promise<SessionUser | null> => {
   const verified = verifySessionValue(jar.get(SESSION_COOKIE)?.value);
   if (!verified) return null;
   const user = await db.user.findUnique({ where: { id: verified.userId } });
-  return user ? toSessionUser(user, verified.method) : null;
+  if (!user || (verified.method === "dev" && !devSessionAllowed(user))) return null;
+  return toSessionUser(user, verified.method);
 });
 
 /** Signed in, username optional: only the onboarding step and its check/save endpoints use this. */

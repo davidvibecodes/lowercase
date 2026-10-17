@@ -38,6 +38,13 @@ describe("social realtime (KTD9)", () => {
     expect(presenceB.filter((p) => p.userId === roy)).toEqual([]);
   });
 
+  it("resends the Received count on every connect, so a tab that was offline catches up (R18)", async () => {
+    const { otherId } = await sendFriendRequest(db, roy, "ankit");
+    let resync: unknown;
+    await connectAs(h, otherId, (c) => c.once("social:changed", (p) => (resync = p)));
+    expect(resync).toEqual({ received: 1, resync: true });
+  });
+
   it("accepting shows each new friend online to the other without a reload", async () => {
     const a = await connectAs(h, roy);
     const b = await connectAs(h, ankit);

@@ -124,7 +124,10 @@ export async function importCasebank(db: Db, doc: unknown, opts: { dryRun: boole
       await applyCase(db, c);
       outcomes.push({ externalId: c.externalId, title: c.title, status: "applied" });
     } catch (e) {
-      outcomes.push({ externalId: c.externalId, title: c.title, status: "failed", reason: e instanceof Error && e.message === IN_PROGRESS ? IN_PROGRESS : "Couldn't save this case. Try again." });
+      const inProgress = e instanceof Error && e.message === IN_PROGRESS;
+      // The admin sees a fixed sentence; keep the real cause in the server log.
+      if (!inProgress) console.error(`[casebank] import of ${c.externalId} failed`, e);
+      outcomes.push({ externalId: c.externalId, title: c.title, status: "failed", reason: inProgress ? IN_PROGRESS : "Couldn't save this case. Try again." });
     }
   }
   return { ok: true, dryRun: false, cases, outcomes };

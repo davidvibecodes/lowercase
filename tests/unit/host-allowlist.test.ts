@@ -1,4 +1,6 @@
+import { request } from "node:http";
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { createSessionValue } from "@/lib/auth/session-cookie";
 import { isAllowedHost, isAllowedOrigin } from "@/server/loopback";
 import { db, resetAndSeed, userId } from "./helpers/db";
 import { connectAs, startHarness, type Harness } from "./helpers/realtime";
@@ -41,9 +43,36 @@ describe("socket handshake", () => {
     await expect(connectAs(h, roy, undefined, { origin: "http://evil.example" })).rejects.toThrow();
   });
 
+  it("refuses a handshake whose Host isn't ours (DNS rebinding)", async () => {
+    const port = Number(new URL(h.url).port);
+    const handshake = (host: string) =>
+      new Promise<number>((resolve, reject) => {
+        const req = request({ host: "127.0.0.1", port, path: "/socket.io/?EIO=4&transport=polling", headers: { host } }, (res) => {
+          res.resume();
+          resolve(res.statusCode ?? 0);
+        });
+        req.on("error", reject);
+        req.end();
+      });
+    expect(await handshake(`evil.example:${port}`)).toBe(403);
+    expect(await handshake(`127.0.0.1:${port}`)).toBe(200);
+  });
+
+  it("refuses a test-login socket once that account has linked Google (KTD5)", async () => {
+    const mihaela = await userId("mihaela");
+    await db.user.update({ where: { id: mihaela }, data: { googleSub: "g-mihaela" } });
+    try {
+      await expect(connectAs(h, mihaela)).rejects.toThrow(/unauthorized/);
+    } finally {
+      await db.user.update({ where: { id: mihaela }, data: { googleSub: null } });
+    }
+  });
+
   it("refuses a user who hasn't chosen a username (R7)", async () => {
     const newcomer = await db.user.create({ data: { firstName: "New", lastName: "Comer", email: "nc@gmail.com", googleSub: "g-nc" } });
-    await expect(connectAs(h, newcomer.id)).rejects.toThrow(/onboarding_required/);
+    // A newcomer only ever has a Google session; a test-login cookie for this account is refused outright (KTD5).
+    const cookie = `lc_session=${encodeURIComponent(createSessionValue(newcomer.id, "google"))}`;
+    await expect(connectAs(h, null, undefined, { cookie })).rejects.toThrow(/onboarding_required/);
   });
 
   it("still accepts our own origin", async () => {

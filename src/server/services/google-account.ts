@@ -27,7 +27,7 @@ function names(c: GoogleClaims): { firstName: string; lastName: string } {
  * Finds or creates the account for a verified Google identity (KTD4).
  * The Google `sub` is the key. A verified email links an existing account
  * only when that account has never been linked to Google, so the seeded
- * owner keeps his history; a different `sub` on the same email is refused.
+ * owner keeps their history; a different `sub` on the same email is refused.
  */
 export async function resolveGoogleUser(db: Db, claims: GoogleClaims): Promise<ResolveResult> {
   if (claims.email_verified !== true) return { ok: false, code: "google_unverified" };

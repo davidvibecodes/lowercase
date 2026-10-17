@@ -13,7 +13,7 @@ test("two players run a full live case, switch roles, and the result unlocks Lev
   await waitOnline(david.page);
   await waitOnline(roy.page);
 
-  // Invite from Friends & Groups; Roy sees the prompt on his home page.
+  // Invite from Friends & Groups; Roy sees the prompt on their home page.
   await david.page.goto("/friends");
   const royRow = david.page.getByTestId("friend-roy");
   await expect(royRow.getByText("Online")).toBeVisible();
