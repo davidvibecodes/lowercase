@@ -63,6 +63,8 @@ Workflow:
 
 There is no down-migration. Rollback means restoring the backup.
 
+**Hosted** (`PUBLIC_ORIGIN` set): step 1 is skipped (settings come from the environment, and `.env` is never written), the backup goes to `backups/` beside the database file as `pre-migrate-<timestamp>.db`, and step 6 seeds `seedContent` (learning content only) when there are no concepts. The run stops first if `hostedConfigProblems()` reports anything.
+
 ## Seed content (prisma/seed/)
 
 - `users.ts`: the owner (`davidsathyandevice`, the admin email), the friends `roy`, `mihaela` and `ankit` with activity history, 20 league bots (`first.last` usernames, `isLeagueBot: true`), and the study group name.

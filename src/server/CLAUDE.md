@@ -104,3 +104,9 @@ any open state --(close)--> CLOSED
 - one study group, "Case Club Squad".
 
 It is called inside one transaction by `scripts/ensure-db.ts` and `prisma/seed.ts`, and directly by the test helper `resetAndSeed()`. `resetUserProgress` backs Settings → Reset all my progress.
+
+`seedContent(tx)` is the **hosted** seed: concepts plus `publicCaseSeeds` only, with no users, friendships or groups, and without the licensed Mumbai case. `ensure-db` uses it when `PUBLIC_ORIGIN` is set, and only while there are no concepts. A hosted `resetUserProgress` never treats a user as a seeded person.
+
+## Backups (backup.ts, db-file.ts)
+
+Hosted only: `startBackups()` (called from `server.ts`) writes `lowercase-<timestamp>.db` with `VACUUM INTO` a minute after start and then daily, into `backups/` beside the database file, and prunes to the newest 7. `db-file.ts` turns a `DATABASE_URL` into that path (relative paths resolve from `prisma/`, like Prisma). The pre-migration backup in `ensure-db` uses the same folder when hosted.

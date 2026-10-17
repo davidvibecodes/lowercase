@@ -1,0 +1,31 @@
+# Free-VM setup (for example Oracle Cloud Always Free): the app plus Caddy for automatic HTTPS.
+# Run from this folder:  docker compose up -d --build
+services:
+  app:
+    build:
+      context: ../..
+    restart: unless-stopped
+    env_file: production.env # copy production.env.example and fill it in; never commit it
+    environment:
+      DATABASE_URL: file:/data/lowercase.db
+      PORT: "3000"
+    volumes:
+      - lowercase-data:/data
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - app
+
+volumes:
+  lowercase-data:
+  caddy-data:
+  caddy-config:

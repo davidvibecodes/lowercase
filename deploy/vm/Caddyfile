@@ -1,0 +1,9 @@
+www.trylowercase.app {
+	redir https://trylowercase.app{uri} permanent
+}
+
+trylowercase.app {
+	encode zstd gzip
+	# Caddy forwards the Host header and upgrades WebSockets on its own.
+	reverse_proxy app:3000
+}

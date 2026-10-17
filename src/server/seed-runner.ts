@@ -1,9 +1,10 @@
 import type { Prisma } from "@prisma/client";
-import { caseSeeds } from "../../prisma/seed/cases";
+import { caseSeeds, publicCaseSeeds } from "../../prisma/seed/cases";
 import { conceptSeeds } from "../../prisma/seed/concepts";
 import { friendSeeds, leagueBotSeeds, ownerSeed, STUDY_GROUP_NAME, type UserSeed } from "../../prisma/seed/users";
 import { addDays, dayKey } from "@/lib/dates";
 import type { Db } from "@/lib/db";
+import { isHosted } from "@/lib/hosting";
 import type { CaseSeed, ConceptSeed, TreeNodeInput } from "@/lib/types";
 
 type Tx = Prisma.TransactionClient | Db;
@@ -155,6 +156,16 @@ export async function seedDatabase(db: Tx, now = new Date()) {
   for (const c of caseSeeds) await createCase(db, c);
 }
 
+/**
+ * Seed for a public site: the learning content only. No people (every account
+ * there is a real sign-in), no friendships, and none of the licensed casebook
+ * case. Run it inside a transaction, like seedDatabase.
+ */
+export async function seedContent(db: Tx) {
+  for (const [i, c] of conceptSeeds.entries()) await createConcept(db, c, i);
+  for (const c of publicCaseSeeds) await createCase(db, c);
+}
+
 /** All seeded people (owner, friends, league members) by username. */
 export function seedUserByUsername(username: string): UserSeed | undefined {
   return [ownerSeed, ...friendSeeds, ...leagueBotSeeds].find((u) => u.username === username);
@@ -163,7 +174,8 @@ export function seedUserByUsername(username: string): UserSeed | undefined {
 /** Restores one user's progress to seed state (settings → Reset all my progress). */
 export async function resetUserProgress(db: Db, userId: string, now = new Date()) {
   const user = await db.user.findUniqueOrThrow({ where: { id: userId } });
-  const seed = user.username ? seedUserByUsername(user.username) : undefined;
+  // On a public site nobody is a seeded person, even if a real user picked a seeded handle.
+  const seed = user.username && !isHosted() ? seedUserByUsername(user.username) : undefined;
   await db.$transaction(async (tx) => {
     await tx.questionMastery.deleteMany({ where: { userId } });
     await tx.answerEvent.deleteMany({ where: { userId } });

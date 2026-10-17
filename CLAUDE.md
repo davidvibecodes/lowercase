@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-lowercase is a gamified, peer-to-peer consulting case-prep app. Learners take adaptive concept quizzes, then run live Interviewer/Interviewee cases with a friend: revealable facts, "I'm Stuck" hints, a blue/grey issue tree, a transcript and a rubric. It runs **locally only**: one machine, served on loopback, with SQLite. Nothing here is built for hosting.
+lowercase is a gamified, peer-to-peer consulting case-prep app. Learners take adaptive concept quizzes, then run live Interviewer/Interviewee cases with a friend: revealable facts, "I'm Stuck" hints, a blue/grey issue tree, a transcript and a rubric. By default it runs **locally**: one machine, served on loopback, with SQLite. It can also run as a single public instance (Docker image, one persistent disk); that **hosted mode** switches on only when `PUBLIC_ORIGIN` is set. See `docs/hosting.md`. It is never scaled out: presence and invite timers are in memory.
 
 Some directories have their own CLAUDE.md with the detail for that area: `src/lib/auth/`, `src/server/`, `src/app/`, `src/components/`, `prisma/` and `tests/`.
 
@@ -47,6 +47,14 @@ Playwright serves whatever is in `.next`. After a code change, run `npm run buil
 
 Google sign-in needs `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `GOOGLE_REDIRECT_URI`, added by hand. See `.env.example` and the README's "Google sign-in" section. Until they are set, the login page explains what is missing and the test login still works. Nobody can be admin then, because only a Google session can be.
 
+Hosted mode (`src/lib/hosting.ts`) is on exactly when `PUBLIC_ORIGIN` (e.g. `https://trylowercase.app`) is set, and it needs `AUTH_SECRET`, `DATABASE_URL`, the three `GOOGLE_*` values and a `GOOGLE_REDIRECT_URI` of `<origin>/login/google/callback`, or `server.ts` and `ensure-db` refuse to start (`hostedConfigProblems`). It changes these things, and only these:
+- the Host/Origin allowlist pins to the public address instead of loopback (`src/server/loopback.ts`);
+- the server listens on `0.0.0.0` (or `HOST`), and `GET /healthz` answers before the Host guard;
+- session and sign-in cookies are `Secure` when the origin is https;
+- the test login is off whatever `AUTH_MODE` says (`devLoginEnabled`);
+- `ensure-db` never writes `.env`, seeds learning content only (`seedContent`: no people, no licensed Mumbai case), and keeps backups beside the database file;
+- `src/server/backup.ts` writes a daily `VACUUM INTO` copy, newest 7 kept.
+
 Test-only switches, never put in `.env`:
 - `LC_FAKE_GOOGLE=1` plus a loopback `GOOGLE_OIDC_BASE_URL` points sign-in at the fake IdP in `tests/helpers/fake-google.ts`.
 - `INVITE_TTL_MS` sets the session-invite expiry (default 120 s).
@@ -60,8 +68,8 @@ There are three SQLite files: `dev.db` (the owner's real data), `test.db` (Vites
 
 `server.ts` is the entry point for dev and prod:
 1. It loads `.env` via `@next/env`, because tsx doesn't.
-2. It creates the Next app and an HTTP server bound to `127.0.0.1:PORT`.
-3. It answers **421** to any Host other than `localhost:PORT` or `127.0.0.1:PORT`. This is a DNS-rebinding guard; see `src/server/loopback.ts`.
+2. It creates the Next app and an HTTP server bound to `127.0.0.1:PORT` (hosted: `0.0.0.0`).
+3. It answers **421** to any Host other than `localhost:PORT` or `127.0.0.1:PORT` (when hosted: the public address only). This is a DNS-rebinding guard; see `src/server/loopback.ts`.
 4. It attaches Socket.IO on the same port (`src/server/realtime/index.ts`), and hands every other WebSocket upgrade to Next for HMR.
 
 `server.ts` (run by tsx) and the Next bundle load **separate copies** of shared modules. So anything both sides must see lives on `globalThis`:
@@ -148,3 +156,4 @@ Status- and kind-like columns are plain SQLite strings. Their allowed values are
   - `content/private/`, where casebank JSON files are kept;
   - `UI/` and `*.docx`;
   - the `919322690407_s_whatsapp_net-*.jpg` reference images in the repo root, which are licensed casebook material.
+- `.dockerignore` keeps the same files out of the image. Real production settings (`deploy/vm/production.env`) are never committed; only the `.example` is.

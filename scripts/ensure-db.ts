@@ -8,11 +8,16 @@ import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync, appendFileSync } from "node:fs";
 import { resolve } from "node:path";
 import nextEnv from "@next/env";
+import { hostedBackupDir } from "../src/server/db-file";
 
 const root = resolve(import.meta.dirname, "..");
 const envPath = resolve(root, ".env");
 
-if (!existsSync(envPath)) {
+// A hosted server (PUBLIC_ORIGIN from the platform) gets all its settings from the environment.
+// Writing a .env there would invent a different AUTH_SECRET on every deploy and switch on the test login.
+if (process.env.PUBLIC_ORIGIN) {
+  // nothing to write
+} else if (!existsSync(envPath)) {
   writeFileSync(
     envPath,
     [
@@ -30,6 +35,14 @@ if (!existsSync(envPath)) {
 }
 
 nextEnv.loadEnvConfig(root, process.env.NODE_ENV !== "production");
+
+const { hostedConfigProblems, isHosted } = await import("../src/lib/hosting");
+const hosted = isHosted();
+const problems = hostedConfigProblems();
+if (problems.length) {
+  console.error(["[ensure-db] hosted mode isn't configured, so nothing was changed:", ...problems.map((p) => `  - ${p}`)].join("\n"));
+  process.exit(1);
+}
 
 const prismaCli = resolve(root, "node_modules/prisma/build/index.js");
 function prisma(...args: string[]) {
@@ -66,9 +79,10 @@ async function backupBeforeMigrating() {
   if (!pending.length) return null;
   const users = await db.$queryRawUnsafe<{ n: number | bigint }[]>(`SELECT count(*) AS n FROM "User"`).catch(missingTable);
   if (!users || Number(users[0]?.n ?? 0) === 0) return null;
-  const dir = resolve(root, "prisma/backups");
+  // Hosted, the copy goes beside the database on its persistent disk; locally it goes under prisma/backups.
+  const dir = (hosted && hostedBackupDir(process.env.DATABASE_URL, resolve(root, "prisma"))) || resolve(root, "prisma/backups");
   mkdirSync(dir, { recursive: true });
-  const file = resolve(dir, `dev-${new Date().toISOString().replace(/[:.]/g, "-")}.db`);
+  const file = resolve(dir, `${hosted ? "pre-migrate" : "dev"}-${new Date().toISOString().replace(/[:.]/g, "-")}.db`);
   await db.$executeRawUnsafe(`VACUUM INTO '${file.replace(/'/g, "''")}'`);
   console.log(`[ensure-db] backed up the database to ${file} before migrating`);
   return file;
@@ -96,10 +110,16 @@ if (deployed.status !== 0) {
   process.exit(deployed.status ?? 1);
 }
 
-const { seedDatabase } = await import("../src/server/seed-runner");
+const { seedContent, seedDatabase } = await import("../src/server/seed-runner");
 try {
   await db.$queryRawUnsafe("PRAGMA journal_mode=WAL;");
-  if ((await db.user.count()) === 0) {
+  if (hosted) {
+    // A public site starts with learning content only. Its people all arrive through Google sign-in.
+    if ((await db.concept.count()) === 0) {
+      await db.$transaction((tx) => seedContent(tx), { timeout: 120_000, maxWait: 10_000 });
+      console.log("[ensure-db] seeded learning content");
+    }
+  } else if ((await db.user.count()) === 0) {
     // All-or-nothing: a half-seeded database would never be reseeded (the check above is on users).
     await db.$transaction((tx) => seedDatabase(tx), { timeout: 120_000, maxWait: 10_000 });
     console.log("[ensure-db] seeded database");

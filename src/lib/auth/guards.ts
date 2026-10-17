@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { NextResponse, type NextRequest } from "next/server";
 import { cache } from "react";
 import { db } from "@/lib/db";
-import { loopbackOrigins } from "@/server/loopback";
+import { allowedOrigins } from "@/server/loopback";
 import { ServiceError } from "@/server/services/invites";
 import { devSessionAllowed } from "./dev-provider";
 import { toSessionUser, type SessionUser } from "./provider";
@@ -68,7 +68,7 @@ export function adminRoute(handler: (req: NextRequest, admin: OnboardedUser) => 
       // Exact match: unlike Socket.IO's check, a missing or differently-cased Origin is refused here.
       const origin = req.headers.get("origin");
       const type = req.headers.get("content-type") ?? "";
-      if (!origin || !loopbackOrigins(process.env.PORT ?? "3000").includes(origin) || !type.startsWith("application/json")) {
+      if (!origin || !allowedOrigins(process.env.PORT ?? "3000").includes(origin) || !type.startsWith("application/json")) {
         return NextResponse.json({ error: "Forbidden" }, { status: 403 });
       }
     }

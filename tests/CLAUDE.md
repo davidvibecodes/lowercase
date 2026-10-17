@@ -38,6 +38,7 @@ There are two suites: Vitest 5 for rules, services, route handlers, guards and s
   - It checks PKCE, echoes the nonce, and issues an RS256-shaped id_token with a junk signature, which is fine because token-endpoint tokens aren't signature-checked.
   - Tests opt in per run with `LC_FAKE_GOOGLE=1` and `GOOGLE_OIDC_BASE_URL=<fake.baseUrl>`, as `google-routes.test.ts` shows.
 - **Migrations.** `migration.test.ts` replays the real migration files on a temporary database populated through `node:sqlite` at the init schema. Extend it whenever a migration rebuilds a table; see `prisma/CLAUDE.md`.
+- **Hosted mode.** `hosting.test.ts` toggles it with `vi.stubEnv("PUBLIC_ORIGIN", …)` and unstubs in `afterEach`. It never starts a hosted server. A real one was checked by hand: run `npm run start` with the hosted variables from `docs/hosting.md`, a scratch `DATABASE_URL` and another `PORT`, then probe it with `curl -H "Host: <public host>" -H "X-Forwarded-Proto: https"`.
 - **`seed.test.ts`** runs `scripts/ensure-db.ts` twice in a subprocess. With servers running on Windows, or with a stale Prisma client, it can hit `EPERM` while regenerating.
 
 ## End-to-end (tests/e2e, `npm run test:e2e`)

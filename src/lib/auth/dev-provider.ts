@@ -1,8 +1,10 @@
 import { db } from "@/lib/db";
+import { isHosted } from "@/lib/hosting";
 import { toSessionUser, type AuthProvider } from "./provider";
 
+/** AUTH_MODE=dev, and never on a hosted (public) server, whatever the environment says. */
 export function devLoginEnabled(): boolean {
-  return process.env.AUTH_MODE === "dev";
+  return process.env.AUTH_MODE === "dev" && !isHosted();
 }
 
 /**

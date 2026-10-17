@@ -7,6 +7,7 @@
  */
 import * as oidc from "openid-client";
 import { z } from "zod";
+import { publicOrigin } from "@/lib/hosting";
 import { sessionCookieOptions, sign, signatureMatches } from "./session-cookie";
 
 const GOOGLE = {
@@ -22,7 +23,8 @@ export type GoogleEnv = { clientId: string; clientSecret: string; redirectUri: s
 export function googleEnv(): GoogleEnv | null {
   const clientId = process.env.GOOGLE_CLIENT_ID?.trim();
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET?.trim();
-  const redirectUri = (process.env.GOOGLE_REDIRECT_URI ?? "http://localhost:3000/login/google/callback").trim();
+  const fallback = `${publicOrigin() ?? "http://localhost:3000"}/login/google/callback`;
+  const redirectUri = (process.env.GOOGLE_REDIRECT_URI ?? fallback).trim();
   if (!clientId || !clientSecret || clientId.startsWith("your-") || clientSecret.startsWith("your-")) return null;
   return { clientId, clientSecret, redirectUri };
 }
@@ -80,7 +82,15 @@ export type GoogleErrorCode = (typeof GOOGLE_ERROR_CODES)[number];
 
 /** State, nonce and PKCE verifier for one sign-in attempt, HMAC-signed so another localhost port can't plant one. */
 export const OAUTH_COOKIE = "lc_oauth";
-export const oauthCookieOptions = { ...sessionCookieOptions, path: "/login/google", maxAge: 600 };
+export const oauthCookieOptions = {
+  httpOnly: true,
+  sameSite: "lax" as const,
+  path: "/login/google",
+  maxAge: 600,
+  get secure() {
+    return sessionCookieOptions.secure;
+  },
+};
 
 type Pending = { state: string; nonce: string; verifier: string };
 

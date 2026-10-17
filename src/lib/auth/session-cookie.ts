@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { cookiesSecure } from "@/lib/hosting";
 import { SESSION_COOKIE } from "./constants";
 
 export { SESSION_COOKIE };
@@ -56,7 +57,10 @@ export const sessionCookieOptions = {
   sameSite: "lax" as const,
   path: "/",
   maxAge: MAX_AGE_SECONDS,
-  secure: false, // local http only in this phase
+  // Secure over https when hosted; plain http on loopback. A getter, so it follows the environment at use time.
+  get secure() {
+    return cookiesSecure();
+  },
 };
 
 /** Reads the session cookie from a raw Cookie header (socket handshake). */

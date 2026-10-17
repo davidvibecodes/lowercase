@@ -10,7 +10,7 @@ Authentication, the onboarding gate and admin. Decisions come from `docs/plans/2
 - it lasts 30 days. It is stateless: there is no revocation table (a known residual).
 
 Other properties:
-- `secure: false`, because the app is local http only.
+- `secure` follows `cookiesSecure()` (`src/lib/hosting.ts`): `true` when `PUBLIC_ORIGIN` is https, `false` for local http. It is a getter, evaluated when the cookie is set.
 - Any change to the format makes every existing cookie fail verification, so everyone signs in again. That is acceptable and was done on purpose when `method` was added.
 - `constants.ts` holds only the cookie name, so Edge middleware can import it without `node:crypto`.
 - `sign()` / `signatureMatches()` also sign the one-time Google state cookie.
@@ -65,7 +65,7 @@ Things that are easy to get wrong:
 
 ## Test login (dev-provider.ts, actions.ts, `src/app/login/as/[username]`)
 
-- Enabled only when `AUTH_MODE=dev`. The cookie it issues has method `dev`, so it is **never admin**.
+- Enabled only when `AUTH_MODE=dev` **and the server isn't hosted** (`PUBLIC_ORIGIN` unset). A hosted server ignores `AUTH_MODE`, so a stray `AUTH_MODE=dev` can't open the passwordless login on a public site. The cookie it issues has method `dev`, so it is **never admin**.
 - It admits only `DEV_LOGIN_USERNAMES` (the owner, `roy`, `mihaela`, `ankit`), each only while its `googleSub` is null. Otherwise anyone at the machine could open a real friend's account by typing their handle.
 - `availableDevLogins()` feeds the login page's Testing section.
 - **Peer testing.** Cookies are scoped by host, not port, so `localhost:3000` and `127.0.0.1:3000` hold separate sessions. `/login/as/[username]` is opened on the other hostname. It is a page whose button posts a server action. Never turn it back into a GET that signs in: a cross-site link could then replace the owner's Google session.
@@ -73,9 +73,9 @@ Things that are easy to get wrong:
 
 ## Loopback guard (`src/server/loopback.ts`)
 
-This protects against DNS rebinding: a hostile hostname that resolves to 127.0.0.1 would pass Next's same-origin checks. There are three call sites:
-- `server.ts`: Host must be `localhost:PORT` or `127.0.0.1:PORT`, otherwise `421`.
-- Socket.IO `allowRequest`: Host as above. Origin may be absent; when present it must be one of the two origins.
+This protects against DNS rebinding: a hostile hostname that resolves to 127.0.0.1 would pass Next's same-origin checks. `allowedHosts()` / `allowedOrigins()` are the single source: the two loopback names locally, and **only** the public address when hosted (no loopback names then). There are three call sites:
+- `server.ts`: Host must be an allowed host, otherwise `421`. `/healthz` is answered before this check.
+- Socket.IO `allowRequest`: Host as above. Origin may be absent; when present it must be an allowed origin.
 - `adminRoute`: Origin is required and compared exactly.
 
 ## Tests
@@ -85,4 +85,5 @@ This protects against DNS rebinding: a hostile hostname that resolves to 127.0.0
 - `tests/unit/google-routes.test.ts`: the routes against the fake IdP.
 - `tests/unit/google-account.test.ts`: account linking.
 - `tests/unit/host-allowlist.test.ts`: the loopback guard.
+- `tests/unit/hosting.test.ts`: hosted mode (public-origin checks, Secure cookies, test login off, config problems, content-only seed).
 - E2E: `tests/e2e/login.spec.ts`.

@@ -1,0 +1,21 @@
+.git
+node_modules
+.next
+out
+.env
+.env.*
+!.env.example
+prisma/*.db
+prisma/*.db-*
+prisma/backups
+content/private
+test-results
+playwright-report
+blob-report
+*.tsbuildinfo
+# owner's local files and licensed reference material never go into an image
+UI
+docs
+*.docx
+919322690407_s_whatsapp_net-*.jpg
+deploy
