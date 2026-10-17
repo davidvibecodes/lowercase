@@ -7,6 +7,7 @@ import { allowedHosts, allowedOrigins, isAllowedHost, isAllowedOrigin } from "@/
 import { caseSeeds, publicCaseSeeds } from "../../prisma/seed/cases";
 import { dbFilePath, hostedBackupDir } from "@/server/db-file";
 import { seedContent } from "@/server/seed-runner";
+import { readBundledCasebank, seedBundledCasebank } from "@/server/seed-casebank";
 import { db } from "./helpers/db";
 
 const HOSTED = {
@@ -134,5 +135,19 @@ describe("the public seed", () => {
     expect(titles).toHaveLength(publicCaseSeeds.length);
     expect(titles.some((t) => t.includes("Mumbai"))).toBe(false);
     expect(await db.concept.count()).toBeGreaterThan(0);
+  });
+
+  it("then brings in the bundled casebank once, as the importer would", async () => {
+    const doc = readBundledCasebank() as { cases: Array<{ case_id: string }> };
+    expect(doc.cases.map((c) => c.case_id)).toEqual(["CASE_001", "CASE_002", "CASE_003", "CASE_004"]);
+    const first = await seedBundledCasebank(db);
+    expect(first.ok && first.outcomes.map((o) => o.status)).toEqual(["applied", "applied", "applied", "applied"]);
+    const imported = await db.case.findMany({ where: { externalId: { not: null } }, orderBy: { externalId: "asc" } });
+    expect(imported.map((c) => c.title)).toEqual(["Delhi Metro Network", "Five Star Hotel", "Car Insurance Company", "Tractor Insurance Provider"]);
+    expect(imported.every((c) => c.published)).toBe(true);
+    // Running it again converges: nothing is duplicated.
+    await seedBundledCasebank(db);
+    expect(await db.case.count({ where: { externalId: { not: null } } })).toBe(4);
+    expect(await db.user.count()).toBe(0);
   });
 });

@@ -1,0 +1,1558 @@
+{
+  "schema_version": "2.0.0",
+  "platform_target": "AI_Case_Coach_CMS",
+  "agent_execution_rules": {
+    "strict_fact_gating": true,
+    "prevent_early_disclosure": "Agent must verify that all prerequisite_node_ids in a fact's reveal_gate are marked UNLOCKED in the session state before verbalizing the fact.",
+    "prevent_missed_facts": "If a candidate attempts to transition to a new branch while an active branch has unrevealed facts on the correct_issue_path, Agent must trigger the node's missed_fact_fallback_nudge."
+  },
+  "cases": [
+    {
+      "case_id": "CASE_001",
+      "title": "Delhi Metro Network",
+      "metadata": {
+        "case_type": "Profitability",
+        "industry": "Public Transit & Infrastructure",
+        "difficulty": "Easy",
+        "source_pages": [47, 48],
+        "citation": "[cite: 4, 5]"
+      },
+      "problem_statement": "The Delhi Metro network is facing profitability issues. Figure out why and suggest recommendations.",
+      "case_facts_given": [
+        "The client is facing lower revenue at CP Metro station compared to others",
+        "Occupancy rate of outlet units is low",
+        "Issue with the rent agreement of outlet units",
+        "Lock-in period is the time-period in which the tenant cannot vacate the property and the landlord cannot evict you from the property"
+      ],
+      "extracted_case_facts": [
+        {
+          "fact_id": "F_001_01",
+          "fact_text": "The station has been facing this profitability issue since the beginning, and there is a considerable difference in profits.",
+          "fact_category": "CLARIFYING_SCOPING",
+          "mapped_node_id": "N_001_ROOT",
+          "source_turn_id": 3,
+          "reveal_gate": {
+            "prerequisite_node_ids": [],
+            "trigger_condition": "Candidate asks about timeline/duration and magnitude of the profitability issue.",
+            "anti_leak_rule": "Do not mention Connaught Place (CP) station or revenue vs. cost yet.",
+            "missed_fact_fallback_nudge": "Before diving into the framework, would you like to clarify the timeline and magnitude of the profit difference?"
+          }
+        },
+        {
+          "fact_id": "F_001_02",
+          "fact_text": "Delhi Metro also provides consulting services to other metro projects across the world, however this profitability issue is observed only in its metro operations.",
+          "fact_category": "CLARIFYING_SCOPING",
+          "mapped_node_id": "N_001_ROOT",
+          "source_turn_id": 5,
+          "reveal_gate": {
+            "prerequisite_node_ids": [],
+            "trigger_condition": "Candidate asks about revenue streams or business segments of Delhi Metro Network.",
+            "anti_leak_rule": "Do not reveal which specific metro station or which operational revenue stream is affected.",
+            "missed_fact_fallback_nudge": "Keep in mind that we should clarify which business operations of the metro network are experiencing this issue."
+          }
+        },
+        {
+          "fact_id": "F_001_03",
+          "fact_text": "This issue is being faced only at the Connaught Place (CP) Station.",
+          "fact_category": "CLARIFYING_SCOPING",
+          "mapped_node_id": "N_001_ROOT",
+          "source_turn_id": 7,
+          "reveal_gate": {
+            "prerequisite_node_ids": [],
+            "trigger_condition": "Candidate asks whether the issue is network-wide across all stations or isolated to a specific station/geography.",
+            "anti_leak_rule": "Reveal only that the problem is isolated to Connaught Place (CP) Station.",
+            "missed_fact_fallback_nudge": "Before breaking down profits across the whole network, consider asking if this issue affects all stations or a specific one."
+          }
+        },
+        {
+          "fact_id": "F_001_04",
+          "fact_text": "The revenue at CP station is not as high as other similar stations. You can ignore costs for now.",
+          "fact_category": "TREE_DIRECTIONAL",
+          "mapped_node_id": "N_001_REVENUE",
+          "source_turn_id": 9,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_001_ROOT"],
+            "trigger_condition": "Candidate splits Profit into Revenues and Costs and asks how they compare to other stations.",
+            "anti_leak_rule": "Do not reveal that outlets are the problematic revenue stream until the candidate lists the revenue streams.",
+            "missed_fact_fallback_nudge": "How would you break down Profit first to see whether CP station has a revenue or cost problem?"
+          }
+        },
+        {
+          "fact_id": "F_001_05",
+          "fact_text": "Consulting revenue does not need to be considered; proceed with the three operational streams: tickets, advertisements, and outlets.",
+          "fact_category": "TREE_ELIMINATION",
+          "mapped_node_id": "N_001_REVENUE",
+          "source_turn_id": 11,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_001_REVENUE"],
+            "trigger_condition": "Candidate breaks down station revenue streams into tickets, advertisements, and outlets.",
+            "anti_leak_rule": "Wait for the candidate to ask which of the three streams is underperforming before revealing outlets.",
+            "missed_fact_fallback_nudge": "What are the major revenue streams for a metro station?"
+          }
+        },
+        {
+          "fact_id": "F_001_06",
+          "fact_text": "The revenue from outlets at CP station is less as compared to other metro stations.",
+          "fact_category": "TREE_DIRECTIONAL",
+          "mapped_node_id": "N_001_OUTLETS",
+          "source_turn_id": 13,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_001_REVENUE"],
+            "trigger_condition": "Candidate asks which of the three revenue streams (tickets, advertisements, outlets) is experiencing the issue.",
+            "anti_leak_rule": "Do not mention occupancy rate or rent terms yet.",
+            "missed_fact_fallback_nudge": "Among tickets, advertisements, and outlets, which stream would you like to benchmark against other stations?"
+          }
+        },
+        {
+          "fact_id": "F_001_07",
+          "fact_text": "All stations have the same number of outlet units.",
+          "fact_category": "TREE_ELIMINATION",
+          "mapped_node_id": "N_001_NUM_OUTLETS",
+          "source_turn_id": 17,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_001_OUTLETS"],
+            "trigger_condition": "Candidate breaks outlet revenue into Number of Outlet Units, Occupancy Rate, and Rent per Outlet, and checks Number of Outlet Units.",
+            "anti_leak_rule": "Only confirm that the number of units is identical across stations.",
+            "missed_fact_fallback_nudge": "What are the mathematical drivers of total outlet revenue?"
+          }
+        },
+        {
+          "fact_id": "F_001_08",
+          "fact_text": "The rent per outlet is higher for stations with high traffic such as CP. However, the overall outlet revenue of CP is lower among these similar high-traffic stations (implying occupancy rate is lower).",
+          "fact_category": "TREE_DIRECTIONAL",
+          "mapped_node_id": "N_001_RENT_PER_OUTLET",
+          "source_turn_id": 19,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_001_OUTLETS"],
+            "trigger_condition": "Candidate asks if outlet rent is uniform across stations.",
+            "anti_leak_rule": "Let the candidate deduce that occupancy rate must be lower at CP compared to similar high-traffic stations.",
+            "missed_fact_fallback_nudge": "Have you checked whether the rent charged per outlet differs across stations?"
+          }
+        },
+        {
+          "fact_id": "F_001_09",
+          "fact_text": "There are no issues in location awareness/branding, tender awareness, or expected revenue. The issue lies in other contract specifications (Rent Agreement).",
+          "fact_category": "TREE_DIRECTIONAL",
+          "mapped_node_id": "N_001_RENT_AGREEMENT",
+          "source_turn_id": 21,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_001_OCCUPANCY_RATE"],
+            "trigger_condition": "Candidate identifies low occupancy rate and breaks down franchisee decision factors (expected revenue, awareness, contract specifications/incurred costs).",
+            "anti_leak_rule": "Direct candidate to contract specifications/rent agreement without revealing the lock-in period yet.",
+            "missed_fact_fallback_nudge": "From a franchise owner's perspective, what factors determine whether they occupy an outlet at CP station?"
+          }
+        },
+        {
+          "fact_id": "F_001_10",
+          "fact_text": "The lock-in period for outlets in other metro stations is 6 months while in CP it is 12 months, due to which shopkeepers perceive higher risk and do not prefer to rent them.",
+          "fact_category": "ROOT_CAUSE",
+          "mapped_node_id": "N_001_LOCK_IN_PERIOD",
+          "source_turn_id": 23,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_001_RENT_AGREEMENT"],
+            "trigger_condition": "Candidate breaks down rent agreement terms (rent amount, security deposit, lock-in period/duration) and asks if security deposit or lock-in period differs.",
+            "anti_leak_rule": "Once revealed, ask the candidate for recommendations.",
+            "missed_fact_fallback_nudge": "What specific clauses inside a commercial rent agreement could pose a risk to a tenant?"
+          }
+        }
+      ],
+      "issue_tree": {
+        "root_node_id": "N_001_ROOT",
+        "correct_issue_path": [
+          "N_001_ROOT",
+          "N_001_REVENUE",
+          "N_001_OUTLETS",
+          "N_001_NUM_OUTLETS",
+          "N_001_OCCUPANCY_RATE",
+          "N_001_RENT_AGREEMENT",
+          "N_001_LOCK_IN_PERIOD"
+        ],
+        "nodes": [
+          {
+            "node_id": "N_001_ROOT",
+            "label": "Profit (CP Metro Station)",
+            "parent_id": null,
+            "children_ids": ["N_001_REVENUE", "N_001_COST"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Profit = Revenue - Cost",
+            "mapped_fact_ids": ["F_001_01", "F_001_02", "F_001_03"]
+          },
+          {
+            "node_id": "N_001_COST",
+            "label": "Cost",
+            "parent_id": "N_001_ROOT",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_001_REVENUE",
+            "label": "Revenue",
+            "parent_id": "N_001_ROOT",
+            "children_ids": ["N_001_TICKETS", "N_001_ADVERTISEMENTS", "N_001_OUTLETS"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Station Revenue = Tickets + Advertisements + Outlets",
+            "mapped_fact_ids": ["F_001_04", "F_001_05"]
+          },
+          {
+            "node_id": "N_001_TICKETS",
+            "label": "Tickets",
+            "parent_id": "N_001_REVENUE",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_001_ADVERTISEMENTS",
+            "label": "Advertisements",
+            "parent_id": "N_001_REVENUE",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_001_OUTLETS",
+            "label": "Outlets",
+            "parent_id": "N_001_REVENUE",
+            "children_ids": ["N_001_NUM_OUTLETS", "N_001_RENT_PER_OUTLET"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Outlet Revenue = Occupied Outlets * Rent per Outlet",
+            "mapped_fact_ids": ["F_001_06"]
+          },
+          {
+            "node_id": "N_001_RENT_PER_OUTLET",
+            "label": "Rent per Outlet",
+            "parent_id": "N_001_OUTLETS",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": ["F_001_08"]
+          },
+          {
+            "node_id": "N_001_NUM_OUTLETS",
+            "label": "Number of Outlets",
+            "parent_id": "N_001_OUTLETS",
+            "children_ids": ["N_001_TOTAL_AREA", "N_001_AREA_PER_OUTLET", "N_001_OCCUPANCY_RATE"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Occupied Outlets = (Total Area / Area per Outlet) * % of Occupied Outlets",
+            "mapped_fact_ids": ["F_001_07"]
+          },
+          {
+            "node_id": "N_001_TOTAL_AREA",
+            "label": "Total Area",
+            "parent_id": "N_001_NUM_OUTLETS",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_001_AREA_PER_OUTLET",
+            "label": "Area per Outlet",
+            "parent_id": "N_001_NUM_OUTLETS",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_001_OCCUPANCY_RATE",
+            "label": "Percentage of Occupied Outlets",
+            "parent_id": "N_001_NUM_OUTLETS",
+            "children_ids": ["N_001_EXPECTED_REV", "N_001_INCURRED_COSTS", "N_001_RENT_AGREEMENT"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Franchisee Decision Factors",
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_001_EXPECTED_REV",
+            "label": "Expected Revenue",
+            "parent_id": "N_001_OCCUPANCY_RATE",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_001_INCURRED_COSTS",
+            "label": "Incurred Costs",
+            "parent_id": "N_001_OCCUPANCY_RATE",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_001_RENT_AGREEMENT",
+            "label": "Rent Agreement",
+            "parent_id": "N_001_OCCUPANCY_RATE",
+            "children_ids": ["N_001_DURATION", "N_001_LOCK_IN_PERIOD", "N_001_RENT_AMOUNT"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Contract Terms Breakdown",
+            "mapped_fact_ids": ["F_001_09"]
+          },
+          {
+            "node_id": "N_001_DURATION",
+            "label": "Duration",
+            "parent_id": "N_001_RENT_AGREEMENT",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_001_RENT_AMOUNT",
+            "label": "Rent Amount / Security Deposit",
+            "parent_id": "N_001_RENT_AGREEMENT",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_001_LOCK_IN_PERIOD",
+            "label": "Lock-in Period",
+            "parent_id": "N_001_RENT_AGREEMENT",
+            "children_ids": [],
+            "is_on_correct_path": true,
+            "node_status": "ROOT_CAUSE",
+            "formula_or_framework": null,
+            "mapped_fact_ids": ["F_001_10"]
+          }
+        ]
+      },
+      "recommendations": [
+        {
+          "rec_id": "R_001_01",
+          "category": "Contract Policy Revision",
+          "recommendation_text": "Investigate why the lock-in period is 12 months in CP compared to 6 months in other stations, and reduce it if possible.",
+          "target_node_id": "N_001_LOCK_IN_PERIOD"
+        },
+        {
+          "rec_id": "R_001_02",
+          "category": "Pricing Adjustment",
+          "recommendation_text": "If the lock-in period cannot be reduced, explore reducing the rent to make outlets more attractive to franchises.",
+          "target_node_id": "N_001_RENT_AMOUNT"
+        },
+        {
+          "rec_id": "R_001_03",
+          "category": "Differential Pricing System",
+          "recommendation_text": "Introduce a tiered/differential pricing system wherein a higher rent is charged for a shorter (e.g., 2-month) lock-in period and a lower rent is charged for a longer (e.g., 6-month) lock-in period.",
+          "target_node_id": "N_001_LOCK_IN_PERIOD"
+        }
+      ],
+      "summary_takeaways": [
+        "It is important to be MECE at all stages of this problem",
+        "Number of outlets could also be divided into total area, area per outlet and % occupied",
+        "Please don't start listing possible options and rather make use of some structure"
+      ],
+      "transcript": [
+        { "turn_id": 1, "speaker": "Interviewer", "text": "The Delhi Metro network is facing profitability issues. Figure out why and suggest recommendations." },
+        { "turn_id": 2, "speaker": "Candidate", "text": "Since when is the station facing this & what is the difference magnitude?" },
+        { "turn_id": 3, "speaker": "Interviewer", "text": "Since the beginning and there is a considerable difference in profits" },
+        { "turn_id": 4, "speaker": "Candidate", "text": "As per my knowledge, Delhi Metro Network majorly earns its revenues from metro operations, is there any other source of revenue ?" },
+        { "turn_id": 5, "speaker": "Interviewer", "text": "They also provide consulting services to other metro projects across the world, however this issue is observed only in its metro operations" },
+        { "turn_id": 6, "speaker": "Candidate", "text": "Is this issue being faced across all metro stations or any particular station ?" },
+        { "turn_id": 7, "speaker": "Interviewer", "text": "This issue is being faced only at the Connaught Place (CP) Station" },
+        { "turn_id": 8, "speaker": "Candidate", "text": "Okay. Now, profits are a function of the revenues & costs. Do we know if the costs are higher as compared to other stations or there are less revenues?" },
+        { "turn_id": 9, "speaker": "Interviewer", "text": "The revenue is not as high as other stations. You can ignore costs for now" },
+        { "turn_id": 10, "speaker": "Candidate", "text": "Okay. I would break down the revenue streams into 3 broad categories tickets, advertisements & outlets. Should I consider consulting revenue also?" },
+        { "turn_id": 11, "speaker": "Interviewer", "text": "No, you can proceed with these three." },
+        { "turn_id": 12, "speaker": "Candidate", "text": "Is there an issue with one of these revenue streams as compared to other metro stations, or shall I look at all of them to find where the problem is?" },
+        { "turn_id": 13, "speaker": "Interviewer", "text": "The revenue from outlets is less as compared to other metro stations." },
+        { "turn_id": 14, "speaker": "Candidate", "text": "Okay. The revenue from the outlets depends on total number of outlet units, occupancy rate & the rent per outlet. Is there any other factor I should consider?" },
+        { "turn_id": 15, "speaker": "Interviewer", "text": "No, you can go ahead with these" },
+        { "turn_id": 16, "speaker": "Candidate", "text": "Are the number of outlet units the same as other metro stations?" },
+        { "turn_id": 17, "speaker": "Interviewer", "text": "Yes, all stations have the same number of outlet units" },
+        { "turn_id": 18, "speaker": "Candidate", "text": "Coming to the outlet rent, is it uniform across stations ?" },
+        { "turn_id": 19, "speaker": "Interviewer", "text": "The rent is higher for stations with high traffic such as CP. However, the overall revenue of CP is lower among these similar stations" },
+        { "turn_id": 20, "speaker": "Candidate", "text": "Okay, so it seems CP station has a lower occupancy rate. To break this down further, a franchise owner would look at the following factors apart from rent: awareness or branding of the location, awareness of outlet tenders, administrative requirements of the desired outlets, outlet locations within the station, other contract specifications and the overall expected revenue." },
+        { "turn_id": 21, "speaker": "Interviewer", "text": "Yes, these factors are good. You can assume that there are no issues in awareness or expected revenue. Let's move to the other contract issues." },
+        { "turn_id": 22, "speaker": "Candidate", "text": "Sure. The various terms of a rent agreement include the rent, security deposit amount, lock-in period. Since the rent is the same, we should look at the other factors. Is the security deposit amount or lock-in period different which could be a higher risk for the shopkeeper?" },
+        { "turn_id": 23, "speaker": "Interviewer", "text": "Yes, that is correct. The lock-in period for outlets in other metro stations is 6 months while in CP it is 12 months, due to which they do not prefer to rent them. Can you suggest recommendations?" },
+        { "turn_id": 24, "speaker": "Candidate", "text": "Yes. First, we should look into why the lock-in period is 12 months in CP while 6 months in other stations, and if it is possible, it should be reduced. If not, then we can explore reducing the rent to make our outlets attractive to franchises. Additionally, we can also explore a differential pricing system wherein a higher rent can be charged for the 2-month lock in period and a lower rent can be charged for 6-month lock in period" },
+        { "turn_id": 25, "speaker": "Interviewer", "text": "That's all. Thanks." }
+      ]
+    },
+    {
+      "case_id": "CASE_002",
+      "title": "Five Star Hotel",
+      "metadata": {
+        "case_type": "Profitability",
+        "industry": "Hospitality",
+        "difficulty": "Moderate",
+        "source_pages": [49, 50, 51],
+        "citation": "[cite: 6, 7, 8]"
+      },
+      "problem_statement": "Your client is a 5-star hotel in Mumbai. They have been facing lower profitability. You are required to identify the reasons behind the same.",
+      "case_facts_given": [
+        "The client is a single hotel which has been facing lower profits across multiple business lines",
+        "Reduction in revenues received despite no change in the occupancy rates",
+        "Issue was with the greater influx of business customers, reducing the per customer revenue earned",
+        "In the restaurant side, more customers with Zomato Gold or Dineout discounts were causing lower revenue for the restaurant"
+      ],
+      "extracted_case_facts": [
+        {
+          "fact_id": "F_002_01",
+          "fact_text": "The client is a single hotel (not a chain).",
+          "fact_category": "CLARIFYING_SCOPING",
+          "mapped_node_id": "N_002_ROOT",
+          "source_turn_id": 3,
+          "reveal_gate": {
+            "prerequisite_node_ids": [],
+            "trigger_condition": "Candidate asks if the client is a hotel chain or a single property.",
+            "anti_leak_rule": "Only confirm it is a single hotel.",
+            "missed_fact_fallback_nudge": "Would you like to clarify whether our client is a single property or a hotel chain?"
+          }
+        },
+        {
+          "fact_id": "F_002_02",
+          "fact_text": "The issue persists since the last 3 years, but it has amplified in the last 1 year.",
+          "fact_category": "CLARIFYING_SCOPING",
+          "mapped_node_id": "N_002_ROOT",
+          "source_turn_id": 5,
+          "reveal_gate": {
+            "prerequisite_node_ids": [],
+            "trigger_condition": "Candidate asks how long the client has been facing declining profitability.",
+            "anti_leak_rule": "Do not reveal the customer mix shift yet.",
+            "missed_fact_fallback_nudge": "Consider checking the timeline of the profitability decline."
+          }
+        },
+        {
+          "fact_id": "F_002_03",
+          "fact_text": "It is just our hotel facing this issue (not an industry-wide problem).",
+          "fact_category": "CLARIFYING_SCOPING",
+          "mapped_node_id": "N_002_ROOT",
+          "source_turn_id": 7,
+          "reveal_gate": {
+            "prerequisite_node_ids": [],
+            "trigger_condition": "Candidate asks if competing hotels in Mumbai are facing the same issue.",
+            "anti_leak_rule": "Only confirm it is company-specific.",
+            "missed_fact_fallback_nudge": "Is this a market-wide issue or specific to our hotel?"
+          }
+        },
+        {
+          "fact_id": "F_002_04",
+          "fact_text": "It is a luxury hotel with different rooms for different customer types. It receives two types of customers: tourists & business customers. The split between them is currently 30:70 (tourists:business), whereas earlier the split was 50:50.",
+          "fact_category": "CLARIFYING_SCOPING",
+          "mapped_node_id": "N_002_ROOT",
+          "source_turn_id": 11,
+          "reveal_gate": {
+            "prerequisite_node_ids": [],
+            "trigger_condition": "Candidate asks about customer segments and if their ratio has changed.",
+            "anti_leak_rule": "Reveal the 30:70 vs 50:50 split, but do not explain how corporate contracts cap room pricing until the candidate analyzes room rental revenue.",
+            "missed_fact_fallback_nudge": "Who are the primary customer segments visiting our hotel, and has their mix shifted?"
+          }
+        },
+        {
+          "fact_id": "F_002_05",
+          "fact_text": "The hotel has 4 revenue streams: rooms, restaurants, banquet hall, and ancillary services. Start with room revenues first, and both revenues have gone down and costs have gone up, though we will start with revenues.",
+          "fact_category": "TREE_DIRECTIONAL",
+          "mapped_node_id": "N_002_REVENUE",
+          "source_turn_id": 13,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_002_ROOT"],
+            "trigger_condition": "Candidate asks about revenue streams and Revenue vs. Cost breakdown.",
+            "anti_leak_rule": "Guide candidate to Room Revenues first.",
+            "missed_fact_fallback_nudge": "Let's start by looking at the revenue side, specifically beginning with Room revenues."
+          }
+        },
+        {
+          "fact_id": "F_002_06",
+          "fact_text": "Within room revenues, the problem is seen in rental revenue (not room service/related purchases). There has been no change in the number of rooms, occupancy rates remain high, and the listed rent charged per room hasn't reduced.",
+          "fact_category": "TREE_ELIMINATION",
+          "mapped_node_id": "N_002_ROOM_RENTAL",
+          "source_turn_id": 19,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_002_ROOMS"],
+            "trigger_condition": "Candidate splits Room Revenue into Rental vs. Room Service, and breaks Rental into # of rooms, occupancy rate, and room rent charged.",
+            "anti_leak_rule": "Prompt the candidate to hypothesize why total rental revenue realized fell if # of rooms, occupancy, and headline room rates are unchanged.",
+            "missed_fact_fallback_nudge": "How do # of rooms, occupancy rate, and room rate interact, and why might realized revenue still drop if none of those three changed?"
+          }
+        },
+        {
+          "fact_id": "F_002_07",
+          "fact_text": "Due to a greater number of business customers (70% vs 50% earlier), the hotel has to keep a fixed corporate contract price and cannot take advantage of higher dynamic pricing during high demand like it can with general tourists. Now let's move to the restaurant business.",
+          "fact_category": "ROOT_CAUSE",
+          "mapped_node_id": "N_002_CUSTOMER_TYPE_CHANGE",
+          "source_turn_id": 25,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_002_RENT_CHARGES"],
+            "trigger_condition": "Candidate connects the shift toward business customers (70%) to fixed corporate rates vs. higher tourist rates.",
+            "anti_leak_rule": "Confirm Root Cause #1 and transition the candidate to the Restaurant branch.",
+            "missed_fact_fallback_nudge": "Recall the change in tourist vs. business customer ratio we discussed earlier—how does that affect the effective room rate collected?"
+          }
+        },
+        {
+          "fact_id": "F_002_08",
+          "fact_text": "The hotel has 2 restaurants—an Asian and a Continental one. Lower profits are in the Continental restaurant, driven by a fall in in-dining revenues. Number of tables, occupancy rates, average order quantity, and average menu prices have not changed.",
+          "fact_category": "TREE_DIRECTIONAL",
+          "mapped_node_id": "N_002_RESTAURANT_REV",
+          "source_turn_id": 31,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_002_RESTAURANT"],
+            "trigger_condition": "Candidate explores Restaurant revenues (in-dining vs. delivery) and checks tables, occupancy, order quantity, and menu prices.",
+            "anti_leak_rule": "Nudge the candidate to walk through the Customer Journey from arrival to payment.",
+            "missed_fact_fallback_nudge": "Since tables, occupancy, order quantity, and menu prices haven't changed, why don't you walk through the customer journey in the restaurant?"
+          }
+        },
+        {
+          "fact_id": "F_002_09",
+          "fact_text": "Focus on the payment aspect of the customer journey, specifically non-cash payments.",
+          "fact_category": "TREE_DIRECTIONAL",
+          "mapped_node_id": "N_002_PAYMENT",
+          "source_turn_id": 33,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_002_CUST_JOURNEY"],
+            "trigger_condition": "Candidate maps the restaurant customer journey (Arrival -> Waiting Time -> Meal Consumption -> Payment).",
+            "anti_leak_rule": "Do not mention Zomato Gold or Dineout until the candidate identifies discounts/cashbacks under non-cash payments.",
+            "missed_fact_fallback_nudge": "Let's look closely at the final step of the customer journey—Payment, specifically non-cash payments."
+          }
+        },
+        {
+          "fact_id": "F_002_10",
+          "fact_text": "Most recent customers have Zomato Gold or Dineout installed, which reduces their final payment value via discounts, and the client bears a portion of this discount cost.",
+          "fact_category": "ROOT_CAUSE",
+          "mapped_node_id": "N_002_DISCOUNTS",
+          "source_turn_id": 35,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_002_NON_CASH"],
+            "trigger_condition": "Candidate breaks non-cash payments into customer-side, restaurant-side, and discounts/cashbacks, hypothesizing extra discounts.",
+            "anti_leak_rule": "Confirm Root Cause #2 and ask for final recommendations.",
+            "missed_fact_fallback_nudge": "When paying digitally or via apps, why might the restaurant receive less money than the billed order value?"
+          }
+        }
+      ],
+      "issue_tree": {
+        "root_node_id": "N_002_ROOT",
+        "correct_issue_path": [
+          "N_002_ROOT",
+          "N_002_REVENUE",
+          "N_002_ROOMS",
+          "N_002_ROOM_RENTAL",
+          "N_002_RENT_CHARGES",
+          "N_002_CUSTOMER_TYPE_CHANGE",
+          "N_002_RESTAURANT",
+          "N_002_RESTAURANT_REV",
+          "N_002_CUST_JOURNEY",
+          "N_002_PAYMENT",
+          "N_002_NON_CASH",
+          "N_002_DISCOUNTS"
+        ],
+        "nodes": [
+          {
+            "node_id": "N_002_ROOT",
+            "label": "Profit (5-Star Hotel in Mumbai)",
+            "parent_id": null,
+            "children_ids": ["N_002_REVENUE", "N_002_COST"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Profit = Revenue - Cost",
+            "mapped_fact_ids": ["F_002_01", "F_002_02", "F_002_03", "F_002_04"]
+          },
+          {
+            "node_id": "N_002_COST",
+            "label": "Cost",
+            "parent_id": "N_002_ROOT",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_002_REVENUE",
+            "label": "Revenue",
+            "parent_id": "N_002_ROOT",
+            "children_ids": ["N_002_ROOMS", "N_002_RESTAURANT"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Hotel Revenue = Rooms + Restaurant + Banquet Hall + Ancillary Services",
+            "mapped_fact_ids": ["F_002_05"]
+          },
+          {
+            "node_id": "N_002_ROOMS",
+            "label": "Rooms",
+            "parent_id": "N_002_REVENUE",
+            "children_ids": ["N_002_ROOM_RENTAL", "N_002_ROOM_SERVICE"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Room Revenue = Rental + Room Service",
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_002_ROOM_SERVICE",
+            "label": "Room Service",
+            "parent_id": "N_002_ROOMS",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_002_ROOM_RENTAL",
+            "label": "Rental",
+            "parent_id": "N_002_ROOMS",
+            "children_ids": ["N_002_NUM_ROOMS", "N_002_ROOM_OCCUPANCY", "N_002_RENT_CHARGES"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Rental Revenue = # of Rooms * Occupancy * Effective Rent Realized",
+            "mapped_fact_ids": ["F_002_06"]
+          },
+          {
+            "node_id": "N_002_NUM_ROOMS",
+            "label": "# of Rooms",
+            "parent_id": "N_002_ROOM_RENTAL",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_002_ROOM_OCCUPANCY",
+            "label": "Occupancy",
+            "parent_id": "N_002_ROOM_RENTAL",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_002_RENT_CHARGES",
+            "label": "Rent Charges (Realized Rate)",
+            "parent_id": "N_002_ROOM_RENTAL",
+            "children_ids": ["N_002_CUSTOMER_TYPE_CHANGE", "N_002_ROOM_TYPE_CHANGE", "N_002_PAYMENT_GATEWAY"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_002_ROOM_TYPE_CHANGE",
+            "label": "Change in Room Type",
+            "parent_id": "N_002_RENT_CHARGES",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_002_PAYMENT_GATEWAY",
+            "label": "Payment Gateway",
+            "parent_id": "N_002_RENT_CHARGES",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_002_CUSTOMER_TYPE_CHANGE",
+            "label": "Change in Customer Type (70% Corporate Fixed Rate)",
+            "parent_id": "N_002_RENT_CHARGES",
+            "children_ids": [],
+            "is_on_correct_path": true,
+            "node_status": "ROOT_CAUSE",
+            "formula_or_framework": null,
+            "mapped_fact_ids": ["F_002_07"]
+          },
+          {
+            "node_id": "N_002_RESTAURANT",
+            "label": "Restaurant (Continental)",
+            "parent_id": "N_002_REVENUE",
+            "children_ids": ["N_002_RESTAURANT_REV"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_002_RESTAURANT_REV",
+            "label": "Revenues (In-Dining)",
+            "parent_id": "N_002_RESTAURANT",
+            "children_ids": ["N_002_NUM_TABLES", "N_002_REST_OCCUPANCY", "N_002_AVG_ORDER_QTY", "N_002_AVG_ORDER_PRICE", "N_002_CUST_JOURNEY"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Dining Revenue Drivers + Customer Journey",
+            "mapped_fact_ids": ["F_002_08"]
+          },
+          {
+            "node_id": "N_002_NUM_TABLES",
+            "label": "# of Tables",
+            "parent_id": "N_002_RESTAURANT_REV",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_002_REST_OCCUPANCY",
+            "label": "Occupancy",
+            "parent_id": "N_002_RESTAURANT_REV",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_002_AVG_ORDER_QTY",
+            "label": "Avg. Order Qty.",
+            "parent_id": "N_002_RESTAURANT_REV",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_002_AVG_ORDER_PRICE",
+            "label": "Avg. Order Price",
+            "parent_id": "N_002_RESTAURANT_REV",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_002_CUST_JOURNEY",
+            "label": "Customer Journey",
+            "parent_id": "N_002_RESTAURANT_REV",
+            "children_ids": ["N_002_ARRIVAL", "N_002_WAITING_TIME", "N_002_MEAL_CONSUMPTION", "N_002_PAYMENT"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Arrival -> Waiting Time -> Meal Consumption -> Payment",
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_002_ARRIVAL",
+            "label": "Arrival",
+            "parent_id": "N_002_CUST_JOURNEY",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_002_WAITING_TIME",
+            "label": "Waiting Time",
+            "parent_id": "N_002_CUST_JOURNEY",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_002_MEAL_CONSUMPTION",
+            "label": "Meal Consumption",
+            "parent_id": "N_002_CUST_JOURNEY",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_002_PAYMENT",
+            "label": "Payment",
+            "parent_id": "N_002_CUST_JOURNEY",
+            "children_ids": ["N_002_CASH", "N_002_NON_CASH"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Cash vs. Non-Cash Payment",
+            "mapped_fact_ids": ["F_002_09"]
+          },
+          {
+            "node_id": "N_002_CASH",
+            "label": "Cash",
+            "parent_id": "N_002_PAYMENT",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_002_NON_CASH",
+            "label": "Non-Cash",
+            "parent_id": "N_002_PAYMENT",
+            "children_ids": ["N_002_CUST_SIDE", "N_002_REST_SIDE", "N_002_DISCOUNTS"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_002_CUST_SIDE",
+            "label": "Customer Side",
+            "parent_id": "N_002_NON_CASH",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_002_REST_SIDE",
+            "label": "Restaurant Side",
+            "parent_id": "N_002_NON_CASH",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_002_DISCOUNTS",
+            "label": "Discounts (Zomato Gold / Dineout)",
+            "parent_id": "N_002_NON_CASH",
+            "children_ids": [],
+            "is_on_correct_path": true,
+            "node_status": "ROOT_CAUSE",
+            "formula_or_framework": null,
+            "mapped_fact_ids": ["F_002_10"]
+          }
+        ]
+      },
+      "recommendations": [
+        {
+          "rec_id": "R_002_01",
+          "category": "Short-Term",
+          "recommendation_text": "Increase prices for room service and other ancillary facilities for business customers.",
+          "target_node_id": "N_002_CUSTOMER_TYPE_CHANGE"
+        },
+        {
+          "rec_id": "R_002_02",
+          "category": "Long-Term (Contracts)",
+          "recommendation_text": "Renegotiate corporate contracts with companies as well as Zomato/Dineout to address the discount burden.",
+          "target_node_id": "N_002_DISCOUNTS"
+        },
+        {
+          "rec_id": "R_002_03",
+          "category": "Long-Term (Inventory Allocation)",
+          "recommendation_text": "Limit or cap the number of rooms allocated to fixed-rate business customers.",
+          "target_node_id": "N_002_CUSTOMER_TYPE_CHANGE"
+        }
+      ],
+      "summary_takeaways": [
+        "Instead of using price/charges, revenue received could be a better option as that would include both price and discounts",
+        "It is always advisable to ask interviewer for suggestion or change in framework if the existing one doesn't provide the required solutions"
+      ],
+      "transcript": [
+        { "turn_id": 1, "speaker": "Interviewer", "text": "Your client is a 5-star hotel in Mumbai. They have been facing lower profitability. You are required to identify the reasons behind the same." },
+        { "turn_id": 2, "speaker": "Candidate", "text": "First, can you please tell whether the client is a hotel chain or single hotel?" },
+        { "turn_id": 3, "speaker": "Interviewer", "text": "It is a single hotel which has been facing the issue" },
+        { "turn_id": 4, "speaker": "Candidate", "text": "Since how long has the client been facing this issue?" },
+        { "turn_id": 5, "speaker": "Interviewer", "text": "The issue persists since the last 3 years but it has amplified in the last 1 year" },
+        { "turn_id": 6, "speaker": "Candidate", "text": "Since the loss has been greater in the last 1 year, I think there might be multiple recent factors affecting the hotel. Next, I would like to know if other hotels have been facing this issue as well or is it just us?" },
+        { "turn_id": 7, "speaker": "Interviewer", "text": "It's just our hotel which has faced this issue" },
+        { "turn_id": 8, "speaker": "Candidate", "text": "Alright! So, this is not a market wide problem. Next, I would like to know more about the hotel itself. What type of a hotel is this?" },
+        { "turn_id": 9, "speaker": "Interviewer", "text": "It is a luxury hotel with different rooms for different customer types" },
+        { "turn_id": 10, "speaker": "Candidate", "text": "What are the types of customers that we normally receive at our hotel? And have we observed any change in their ratios?" },
+        { "turn_id": 11, "speaker": "Interviewer", "text": "Two types - tourists & business customers. The split between them is 30:70. Earlier, the split was 50:50" },
+        { "turn_id": 12, "speaker": "Candidate", "text": "And what are the revenue streams which our hotel has?" },
+        { "turn_id": 13, "speaker": "Interviewer", "text": "There are 4 streams - rooms, restaurants, banquet hall & ancillary services" },
+        { "turn_id": 14, "speaker": "Candidate", "text": "Alright! Is there any particular revenue stream where the client has been facing this issue?" },
+        { "turn_id": 15, "speaker": "Interviewer", "text": "Let's start with the room revenues here first and slowly move on to others" },
+        { "turn_id": 16, "speaker": "Candidate", "text": "Sure! Profits are a function of revenues or costs. So, do we know whether the revenues of the hotel have gone down or costs have gone up or both?" },
+        { "turn_id": 17, "speaker": "Interviewer", "text": "So, it's a situation of both. But let's start with the revenues first" },
+        { "turn_id": 18, "speaker": "Candidate", "text": "Right! And starting off with the room revenues, we can bifurcate that into 2 parts - room rent and related purchases such as room service." },
+        { "turn_id": 19, "speaker": "Interviewer", "text": "The problem is being seen in the rental revenue" },
+        { "turn_id": 20, "speaker": "Candidate", "text": "Perfect! Then I would like to divide my room revenues into the number of rooms offered by the hotel, the room rent charged and the occupancy rate. Has there been any change in any of these factors over the last 2-3 years?" },
+        { "turn_id": 21, "speaker": "Interviewer", "text": "There has been no change in the number of rooms & the occupancy rates have been high as well. Even, the rent charged per room hasn't reduced" },
+        { "turn_id": 22, "speaker": "Candidate", "text": "Since none of these factors have changed but we have faced a decline in the revenues received, it could be a possibility that the hotel is not receiving the maximum possible revenue for its rooms" },
+        { "turn_id": 23, "speaker": "Interviewer", "text": "Right, what could be the reasons according to you?" },
+        { "turn_id": 24, "speaker": "Candidate", "text": "It could be happening due to 3 reasons: First, as every hotel has different types of rooms, maybe we have reduced the high-rent rooms and replaced them with the lower-rent versions. 2nd, there could be a difference in the type of customers which the hotel is getting and 3rd, the payment facility which the customers are using has changed which has reduced our profits. Since, we know that the type of customers which we receive has changed over time, I would like to start off with that aspect here" },
+        { "turn_id": 25, "speaker": "Interviewer", "text": "Okay, how do you think the second factor would be affecting the hotel?" },
+        { "turn_id": 26, "speaker": "Candidate", "text": "As there is a greater influx of business customers, the hotel can't charge any amount higher than what has been agreed with their respective company. On the other hand, rents charged for general tourists can be higher, thus reducing the rent collected per person" },
+        { "turn_id": 27, "speaker": "Interviewer", "text": "Correct! Due to a greater number of business customers, the hotel has to keep a fixed price & is not able to take advantages of higher revenues due to higher demand which other hotels can. Let's go to restaurant business now." },
+        { "turn_id": 28, "speaker": "Candidate", "text": "Sure! Could you tell me how many restaurants does the hotel have?" },
+        { "turn_id": 29, "speaker": "Interviewer", "text": "So, the hotel has 2 restaurants an Asian and a Continental one. We have been facing lower profits in the Continental restaurant" },
+        { "turn_id": 30, "speaker": "Candidate", "text": "And do we know whether the revenues have fallen, or costs have gone up? If it is revenue - we can analyse by looking into in-dining revenues & delivery services?" },
+        { "turn_id": 31, "speaker": "Interviewer", "text": "There has been a fall in the revenues - in particular in-dining revenues" },
+        { "turn_id": 32, "speaker": "Candidate", "text": "Dining revenue can be looked at through the following aspects: Number of tables, occupancy rates, average order quantity and the average prices." },
+        { "turn_id": 33, "speaker": "Interviewer", "text": "There has been no change in any of these factors. Why don't you go through the customer journey from reaching the restaurant to leaving it?" },
+        { "turn_id": 34, "speaker": "Candidate", "text": "Okay! So a customer's journey can be broken down into the following steps - Arriving at the restaurant, waiting time (both for being assigned a seat and for the food ordered), consumption of the meal and then paying for it" },
+        { "turn_id": 35, "speaker": "Interviewer", "text": "Let's look at the payment aspect. Can you think of the different ways through which a customer might pay for their meal? Focus on non-cash payments" },
+        { "turn_id": 36, "speaker": "Candidate", "text": "Yes, that would be via credit/debit card and UPI payments. The issues could be broken down into following areas customer side payment issues, restaurant side receipt issues, discounts and cash backs. As we know that the order value had not changed, it seems that we are not receiving the money which customers are paying, which could be due to extra discounts offered" },
+        { "turn_id": 37, "speaker": "Interviewer", "text": "Correct! Most of our recent customers have Zomato Gold or Dineout installed which is reducing their final payment value & client bears some amount of this. What are your recommendations? We will close the case after this" },
+        { "turn_id": 38, "speaker": "Candidate", "text": "Short term, our client can increase prices for room service and other facilities for the business customers. On a long-term basis, our client can re-negotiate its contracts with companies as well as Zomato/Dineout to address the discount issues. It can also limit the number of rooms for business customers" }
+      ]
+    },
+    {
+      "case_id": "CASE_003",
+      "title": "Car Insurance Company",
+      "metadata": {
+        "case_type": "Profitability",
+        "industry": "Financial Services - Insurance",
+        "difficulty": "Easy",
+        "source_pages": [52, 53],
+        "citation": "[cite: 9, 10]"
+      },
+      "problem_statement": "Your client is an insurance company who has been facing a decline in its profits since the past year. Analyze the problem and suggest recommendations.",
+      "case_facts_given": [
+        "The client is facing lower profits in the automobile segment",
+        "Variable costs for the client have increased",
+        "Higher number of claim payouts over the past year"
+      ],
+      "extracted_case_facts": [
+        {
+          "fact_id": "F_003_01",
+          "fact_text": "The client provides many types of insurance, but the profit decline is primarily in Automobile Insurance. It operates in India in 3 states (Delhi, Maharashtra & Gujarat), selling via car dealer partnerships at purchase and direct customer renewals. The issue is specific to our client.",
+          "fact_category": "CLARIFYING_SCOPING",
+          "mapped_node_id": "N_003_ROOT",
+          "source_turn_id": 3,
+          "reveal_gate": {
+            "prerequisite_node_ids": [],
+            "trigger_condition": "Candidate asks clarifying questions about insurance product line, geography, sales channels, and industry-wide vs. client-specific scope.",
+            "anti_leak_rule": "Do not reveal whether revenues or costs changed yet.",
+            "missed_fact_fallback_nudge": "Before diving into Profit = Revenue - Cost, what clarifying questions would you ask about the insurance product line and geography?"
+          }
+        },
+        {
+          "fact_id": "F_003_02",
+          "fact_text": "Revenues have remained unchanged, and costs have relatively increased.",
+          "fact_category": "TREE_DIRECTIONAL",
+          "mapped_node_id": "N_003_COSTS",
+          "source_turn_id": 5,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_003_ROOT"],
+            "trigger_condition": "Candidate splits Profit into Revenues and Costs.",
+            "anti_leak_rule": "Do not mention claims payout until the candidate breaks down Fixed and Variable costs.",
+            "missed_fact_fallback_nudge": "Let's check whether the decline in profit is driven by revenues or costs."
+          }
+        },
+        {
+          "fact_id": "F_003_03",
+          "fact_text": "Within variable costs, the claims payout cost has increased.",
+          "fact_category": "TREE_DIRECTIONAL",
+          "mapped_node_id": "N_003_CLAIM_PAYOUTS",
+          "source_turn_id": 7,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_003_COSTS", "N_003_VARIABLE_COSTS"],
+            "trigger_condition": "Candidate breaks costs into Fixed (Operating) and Variable (Claims Payout, Marketing).",
+            "anti_leak_rule": "Do not reveal whether number of payouts or average payout amount increased until asked.",
+            "missed_fact_fallback_nudge": "What are the major fixed and variable cost components for an auto insurance provider?"
+          }
+        },
+        {
+          "fact_id": "F_003_04",
+          "fact_text": "The number of claim payouts has increased (average amount per payout is unchanged).",
+          "fact_category": "TREE_DIRECTIONAL",
+          "mapped_node_id": "N_003_NUM_PAYOUTS",
+          "source_turn_id": 9,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_003_CLAIM_PAYOUTS"],
+            "trigger_condition": "Candidate splits Total Claims Payout into Number of Payouts and Average Amount per Payout.",
+            "anti_leak_rule": "Ask the candidate to structure the possible reasons for an increase in the number of payouts.",
+            "missed_fact_fallback_nudge": "How can you mathematically break down total claims payout cost?"
+          }
+        },
+        {
+          "fact_id": "F_003_05",
+          "fact_text": "The internal algorithm and formula determining claims payout have remained unchanged.",
+          "fact_category": "TREE_ELIMINATION",
+          "mapped_node_id": "N_003_INTERNAL_ISSUES",
+          "source_turn_id": 11,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_003_NUM_PAYOUTS"],
+            "trigger_condition": "Candidate splits Number of Payouts drivers into Internal (algorithm/formula) and External (higher accidents).",
+            "anti_leak_rule": "Prompt the candidate to break down External causes further.",
+            "missed_fact_fallback_nudge": "Could the rise in payouts be driven by internal policy/algorithm changes versus external accident frequency?"
+          }
+        },
+        {
+          "fact_id": "F_003_06",
+          "fact_text": "The young population in our customer base has been driving recklessly, leading to a higher number of accidents and claim payouts.",
+          "fact_category": "ROOT_CAUSE",
+          "mapped_node_id": "N_003_INTERPERSONAL_ISSUES",
+          "source_turn_id": 13,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_003_EXTERNAL_ISSUES"],
+            "trigger_condition": "Candidate breaks External accident causes into Technical flaws (faulty cars) and Interpersonal/Driver flaws (irresponsible driving).",
+            "anti_leak_rule": "Confirm the root cause and ask for recommendations.",
+            "missed_fact_fallback_nudge": "Within external accident causes, how would you distinguish between vehicle-related issues and driver-related issues?"
+          }
+        }
+      ],
+      "issue_tree": {
+        "root_node_id": "N_003_ROOT",
+        "correct_issue_path": [
+          "N_003_ROOT",
+          "N_003_COSTS",
+          "N_003_VARIABLE_COSTS",
+          "N_003_CLAIM_PAYOUTS",
+          "N_003_NUM_PAYOUTS",
+          "N_003_EXTERNAL_ISSUES",
+          "N_003_INTERPERSONAL_ISSUES"
+        ],
+        "nodes": [
+          {
+            "node_id": "N_003_ROOT",
+            "label": "Profit (Car Insurance)",
+            "parent_id": null,
+            "children_ids": ["N_003_REVENUE", "N_003_COSTS"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Profit = Revenue - Costs",
+            "mapped_fact_ids": ["F_003_01"]
+          },
+          {
+            "node_id": "N_003_REVENUE",
+            "label": "Revenue",
+            "parent_id": "N_003_ROOT",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_003_COSTS",
+            "label": "Costs",
+            "parent_id": "N_003_ROOT",
+            "children_ids": ["N_003_FIXED_COSTS", "N_003_VARIABLE_COSTS"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Costs = Fixed Costs + Variable Costs",
+            "mapped_fact_ids": ["F_003_02"]
+          },
+          {
+            "node_id": "N_003_FIXED_COSTS",
+            "label": "Fixed Costs (Operating Costs)",
+            "parent_id": "N_003_COSTS",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_003_VARIABLE_COSTS",
+            "label": "Variable Costs",
+            "parent_id": "N_003_COSTS",
+            "children_ids": ["N_003_CLAIM_PAYOUTS", "N_003_MARKETING_COSTS"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Variable Costs = Claim Payouts + Marketing Costs",
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_003_MARKETING_COSTS",
+            "label": "Marketing Costs",
+            "parent_id": "N_003_VARIABLE_COSTS",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_003_CLAIM_PAYOUTS",
+            "label": "Claim Payouts",
+            "parent_id": "N_003_VARIABLE_COSTS",
+            "children_ids": ["N_003_NUM_PAYOUTS", "N_003_AVG_PAYOUT_AMOUNT"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Claim Payouts = Number of Payouts * Average Amount per Payout",
+            "mapped_fact_ids": ["F_003_03"]
+          },
+          {
+            "node_id": "N_003_AVG_PAYOUT_AMOUNT",
+            "label": "Average Amount per Payout",
+            "parent_id": "N_003_CLAIM_PAYOUTS",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_003_NUM_PAYOUTS",
+            "label": "Number of Payouts",
+            "parent_id": "N_003_CLAIM_PAYOUTS",
+            "children_ids": ["N_003_INTERNAL_ISSUES", "N_003_EXTERNAL_ISSUES"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Internal vs. External Drivers",
+            "mapped_fact_ids": ["F_003_04"]
+          },
+          {
+            "node_id": "N_003_INTERNAL_ISSUES",
+            "label": "Internal Issues (Algorithm / Formula)",
+            "parent_id": "N_003_NUM_PAYOUTS",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": ["F_003_05"]
+          },
+          {
+            "node_id": "N_003_EXTERNAL_ISSUES",
+            "label": "External Issues",
+            "parent_id": "N_003_NUM_PAYOUTS",
+            "children_ids": ["N_003_TECHNICAL_ISSUES", "N_003_INTERPERSONAL_ISSUES"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Technical (Vehicle) vs. Interpersonal (Driver)",
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_003_TECHNICAL_ISSUES",
+            "label": "Technical Issues (Faulty Cars)",
+            "parent_id": "N_003_EXTERNAL_ISSUES",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_003_INTERPERSONAL_ISSUES",
+            "label": "Interpersonal Issues (Reckless Driving by Young Customers)",
+            "parent_id": "N_003_EXTERNAL_ISSUES",
+            "children_ids": [],
+            "is_on_correct_path": true,
+            "node_status": "ROOT_CAUSE",
+            "formula_or_framework": null,
+            "mapped_fact_ids": ["F_003_06"]
+          }
+        ]
+      },
+      "recommendations": [
+        {
+          "rec_id": "R_003_01",
+          "category": "Short-Term",
+          "recommendation_text": "Change the underwriting/claims algorithm to either set a cap on reimbursable damages or incentivize responsible driving via behaviour-based premiums (lower premiums for safe driving track records and vice-versa).",
+          "target_node_id": "N_003_INTERPERSONAL_ISSUES"
+        },
+        {
+          "rec_id": "R_003_02",
+          "category": "Long-Term",
+          "recommendation_text": "Diversify the customer portfolio both age-wise and state-wise to reduce concentration risk on the bottom line.",
+          "target_node_id": "N_003_INTERPERSONAL_ISSUES"
+        }
+      ],
+      "summary_takeaways": [
+        "External issues could have also been divided as vehicle issues vs driver issues",
+        "Please don't start laundry-listing options after reaching number of payouts, rather make use of some structure"
+      ],
+      "transcript": [
+        { "turn_id": 1, "speaker": "Interviewer", "text": "Your client is an insurance company who has been facing a decline in its profits since the past year. Analyze the problem and suggest recommendations." },
+        { "turn_id": 2, "speaker": "Candidate", "text": "Understood. Before I delve deeper, I wanted to ask some clarifying questions. What kind of insurance does it provide? What are the geographies in which it operates? How does it sell insurance? Also, is this an industry wide phenomenon or company specific issue?" },
+        { "turn_id": 3, "speaker": "Interviewer", "text": "It provides many types of insurance but the decline has primarily been in Automobile Insurance. It operates in India in 3 states - Delhi, Maharashtra & Gujarat. It has partnered with car dealers to sell insurance at the time of purchase. Apart from this, renewals continue by directly approaching the customers. This is happening only with our client." },
+        { "turn_id": 4, "speaker": "Candidate", "text": "As Profits = Revenues - Costs. Any information on changes in any of these?" },
+        { "turn_id": 5, "speaker": "Interviewer", "text": "Revenues have been unchanged, and costs have relatively increased." },
+        { "turn_id": 6, "speaker": "Candidate", "text": "So this is a cost side issue. I'll break down the costs into fixed and variable costs. The major cost heads in fixed is operating costs while that in variable are claims payout & marketing expenses. Has any of these increased?" },
+        { "turn_id": 7, "speaker": "Interviewer", "text": "Yes, the claims payout has increased." },
+        { "turn_id": 8, "speaker": "Candidate", "text": "Alright, so the total claims payout cost can be broken down further as no. of payouts and average amount per payout. Which of these has changed?" },
+        { "turn_id": 9, "speaker": "Interviewer", "text": "Number of payouts have increased. What can be the possible reasons?" },
+        { "turn_id": 10, "speaker": "Candidate", "text": "There can be 2 types of causes - 1. Internal such as algorithm / formula determining claims payout could have changed, 2. External such as higher number of accidents could be happening" },
+        { "turn_id": 11, "speaker": "Interviewer", "text": "We know that the internal algorithm and formula has remained unchanged. What could be the other reasons?" },
+        { "turn_id": 12, "speaker": "Candidate", "text": "Understood. In that case, there seems to be an external reason for this phenomenon. Again, there can be 2 possibilities - 1. Technical flaws like faulty cars leading to more accidents or 2. Interpersonal flaws like irresponsible driving" },
+        { "turn_id": 13, "speaker": "Interviewer", "text": "You are right. We have observed that the young population in our customer base has been driving recklessly, leading to higher number of claim payouts. Could you suggest some recommendations in this regard?" },
+        { "turn_id": 14, "speaker": "Candidate", "text": "Sure. I recommend the client to: 1. In the short term, change their algorithm to either set a cap on reimbursable damages or incentivize responsible driving via behaviour-based premiums (low premiums for safe drivers i.e. driving track record and vice-versa) 2. In the long term, the client should diversify its customers both age wise and state wise so that this doesn't affect their bottom-line too much again in the future." },
+        { "turn_id": 15, "speaker": "Interviewer", "text": "Good recommendations. Thank You. We can close the case here." }
+      ]
+    },
+    {
+      "case_id": "CASE_004",
+      "title": "Tractor Insurance Provider",
+      "metadata": {
+        "case_type": "Profitability",
+        "industry": "Financial Services / Agriculture",
+        "difficulty": "Difficult",
+        "source_pages": [54, 55, 56],
+        "citation": "[cite: 11, 12, 13]"
+      },
+      "problem_statement": "Your client is an insurance provider facing a decline in profits. Figure out why and suggest recommendations.",
+      "case_facts_given": [
+        "Client deals with tractor insurance, decline in profits since last year",
+        "Market has five players with equal market share; industry-wide issue",
+        "Demand for tractors has gone down"
+      ],
+      "extracted_case_facts": [
+        {
+          "fact_id": "F_004_01",
+          "fact_text": "The client deals exclusively with tractor insurance, operates Pan-India serving rural farming customers, and has faced this profit decline for the past 1 year.",
+          "fact_category": "CLARIFYING_SCOPING",
+          "mapped_node_id": "N_004_ROOT",
+          "source_turn_id": 5,
+          "reveal_gate": {
+            "prerequisite_node_ids": [],
+            "trigger_condition": "Candidate asks about insurance type, timeline, geography, and target customer segment.",
+            "anti_leak_rule": "Do not reveal that tractor purchases have declined yet.",
+            "missed_fact_fallback_nudge": "What kind of insurance does the client provide, and who are its typical customers?"
+          }
+        },
+        {
+          "fact_id": "F_004_02",
+          "fact_text": "There are 4 more players in the industry (5 total), all with equal market share. It is an industry-wide issue. The client does not use agents; instead, it has tie-ups with local banks where farmers avail insurance and other facilities.",
+          "fact_category": "CLARIFYING_SCOPING",
+          "mapped_node_id": "N_004_ROOT",
+          "source_turn_id": 13,
+          "reveal_gate": {
+            "prerequisite_node_ids": [],
+            "trigger_condition": "Candidate asks about competitors, industry-wide scope, and distribution channels.",
+            "anti_leak_rule": "Reveal the bank tie-up channel, but do not mention loan defaults or interest rate hikes yet.",
+            "missed_fact_fallback_nudge": "How does the client distribute its policies, and is this issue specific to our client or industry-wide?"
+          }
+        },
+        {
+          "fact_id": "F_004_03",
+          "fact_text": "Revenues have declined (major revenue is insurance premiums collected from customers).",
+          "fact_category": "TREE_DIRECTIONAL",
+          "mapped_node_id": "N_004_REVENUE",
+          "source_turn_id": 15,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_004_ROOT"],
+            "trigger_condition": "Candidate splits Profit into Revenue and Cost.",
+            "anti_leak_rule": "Wait for candidate to break down Premium Revenue before revealing that # of customers declined.",
+            "missed_fact_fallback_nudge": "Let's check whether the profit decline is driven by revenue or cost."
+          }
+        },
+        {
+          "fact_id": "F_004_04",
+          "fact_text": "The number of customers has gone down (premium per customer per instalment and frequency of instalments are unchanged), and it is driven by a reduction in demand (not supply capacity).",
+          "fact_category": "TREE_DIRECTIONAL",
+          "mapped_node_id": "N_004_INS_DEMAND",
+          "source_turn_id": 21,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_004_REVENUE", "N_004_NUM_CUSTOMERS"],
+            "trigger_condition": "Candidate breaks Premium Revenue into # of Customers, Premium per Instalment, and # of Instalments, then splits # of Customers into Demand vs. Supply.",
+            "anti_leak_rule": "Do not mention tractor sales until the candidate maps the insurance customer journey and identifies 'Need'.",
+            "missed_fact_fallback_nudge": "What are the components of premium revenue, and is the drop in customers a demand or supply issue?"
+          }
+        },
+        {
+          "fact_id": "F_004_05",
+          "fact_text": "Within the insurance customer journey, customer 'Need' for tractor insurance has declined.",
+          "fact_category": "TREE_DIRECTIONAL",
+          "mapped_node_id": "N_004_INS_JOURNEY_NEED",
+          "source_turn_id": 25,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_004_INS_DEMAND"],
+            "trigger_condition": "Candidate maps the insurance customer journey (Need, Awareness, Availability, Accessibility, Affordability, Purchase & Post-Purchase Experience).",
+            "anti_leak_rule": "Let the candidate break down why 'Need' for tractor insurance fell (# of tractors purchased vs % insured).",
+            "missed_fact_fallback_nudge": "Walk through the customer journey of buying tractor insurance—where in that journey is the drop occurring?"
+          }
+        },
+        {
+          "fact_id": "F_004_06",
+          "fact_text": "The number of tractors purchased has reduced (no supply issues with tractors; it is a tractor demand-side issue).",
+          "fact_category": "TREE_DIRECTIONAL",
+          "mapped_node_id": "N_004_TRACTOR_DEMAND",
+          "source_turn_id": 29,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_004_INS_JOURNEY_NEED"],
+            "trigger_condition": "Candidate splits insurance need into Total Tractors Purchased and % Buying Insurance, and checks Demand vs. Supply of tractors.",
+            "anti_leak_rule": "Do not reveal affordability until the candidate applies the customer journey to tractor purchases.",
+            "missed_fact_fallback_nudge": "What drives the fundamental need for tractor insurance policies?"
+          }
+        },
+        {
+          "fact_id": "F_004_07",
+          "fact_text": "In the customer journey for buying a tractor, the 'Affordability' of customers has declined. Farmers generally borrow money from local banks, and while farmer income and tractor prices are unchanged, the bank loan has become costly.",
+          "fact_category": "TREE_DIRECTIONAL",
+          "mapped_node_id": "N_004_TRACTOR_AFFORDABILITY",
+          "source_turn_id": 35,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_004_TRACTOR_DEMAND"],
+            "trigger_condition": "Candidate applies the customer journey to tractor purchasing and drills into Affordability (own funds vs. bank loans, income vs. loan cost).",
+            "anti_leak_rule": "Wait for candidate to split loan cost into Tractor Price and Interest Rate before revealing the interest rate hike.",
+            "missed_fact_fallback_nudge": "How do farmers typically finance a tractor purchase, and why might their affordability drop?"
+          }
+        },
+        {
+          "fact_id": "F_004_08",
+          "fact_text": "Because of a bad monsoon last year that hurt farmer revenues, many farmers defaulted on their loans, prompting local banks to increase interest rates on tractor loans.",
+          "fact_category": "ROOT_CAUSE",
+          "mapped_node_id": "N_004_INTEREST_RATES",
+          "source_turn_id": 39,
+          "reveal_gate": {
+            "prerequisite_node_ids": ["N_004_TRACTOR_AFFORDABILITY"],
+            "trigger_condition": "Candidate splits loan cost into Tractor Price and Interest Rates and asks why interest rates increased.",
+            "anti_leak_rule": "Confirm the root cause and ask for short-term and long-term recommendations.",
+            "missed_fact_fallback_nudge": "What are the components of a tractor loan's cost to the farmer, and why would local banks raise interest rates?"
+          }
+        }
+      ],
+      "issue_tree": {
+        "root_node_id": "N_004_ROOT",
+        "correct_issue_path": [
+          "N_004_ROOT",
+          "N_004_REVENUE",
+          "N_004_NUM_CUSTOMERS",
+          "N_004_INS_DEMAND",
+          "N_004_INS_JOURNEY_NEED",
+          "N_004_TRACTORS_PURCHASED",
+          "N_004_TRACTOR_DEMAND",
+          "N_004_TRACTOR_AFFORDABILITY",
+          "N_004_INTEREST_RATES"
+        ],
+        "nodes": [
+          {
+            "node_id": "N_004_ROOT",
+            "label": "Profit (Tractor Insurance)",
+            "parent_id": null,
+            "children_ids": ["N_004_REVENUE", "N_004_COST"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Profit = Revenue - Cost",
+            "mapped_fact_ids": ["F_004_01", "F_004_02"]
+          },
+          {
+            "node_id": "N_004_COST",
+            "label": "Cost",
+            "parent_id": "N_004_ROOT",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_004_REVENUE",
+            "label": "Revenue",
+            "parent_id": "N_004_ROOT",
+            "children_ids": ["N_004_NUM_INSTALMENTS", "N_004_PREMIUM_PER_INSTALMENT", "N_004_NUM_CUSTOMERS"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Revenue = # Customers * Premium per Instalment * # of Instalments",
+            "mapped_fact_ids": ["F_004_03"]
+          },
+          {
+            "node_id": "N_004_NUM_INSTALMENTS",
+            "label": "# of Installments",
+            "parent_id": "N_004_REVENUE",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_004_PREMIUM_PER_INSTALMENT",
+            "label": "Premium per Instalment per Customer",
+            "parent_id": "N_004_REVENUE",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_004_NUM_CUSTOMERS",
+            "label": "# Customers",
+            "parent_id": "N_004_REVENUE",
+            "children_ids": ["N_004_INS_DEMAND", "N_004_INS_SUPPLY"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Demand vs. Supply",
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_004_INS_SUPPLY",
+            "label": "Supply (Insurance)",
+            "parent_id": "N_004_NUM_CUSTOMERS",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_004_INS_DEMAND",
+            "label": "Demand (Insurance)",
+            "parent_id": "N_004_NUM_CUSTOMERS",
+            "children_ids": ["N_004_INS_JOURNEY_NEED"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Customer Journey (Insurance)",
+            "mapped_fact_ids": ["F_004_04"]
+          },
+          {
+            "node_id": "N_004_INS_JOURNEY_NEED",
+            "label": "Customer Journey (Need)",
+            "parent_id": "N_004_INS_DEMAND",
+            "children_ids": ["N_004_TRACTORS_PURCHASED", "N_004_PCT_INSURANCE_PURCHASED"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Policies Needed = # Tractors Purchased * % of Insurance Purchased",
+            "mapped_fact_ids": ["F_004_05"]
+          },
+          {
+            "node_id": "N_004_PCT_INSURANCE_PURCHASED",
+            "label": "% of Insurance Purchased",
+            "parent_id": "N_004_INS_JOURNEY_NEED",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_004_TRACTORS_PURCHASED",
+            "label": "# Tractors Purchased",
+            "parent_id": "N_004_INS_JOURNEY_NEED",
+            "children_ids": ["N_004_TRACTOR_SUPPLY", "N_004_TRACTOR_DEMAND"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Tractor Supply vs. Tractor Demand",
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_004_TRACTOR_SUPPLY",
+            "label": "Supply (Tractors)",
+            "parent_id": "N_004_TRACTORS_PURCHASED",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_004_TRACTOR_DEMAND",
+            "label": "Demand (Tractors)",
+            "parent_id": "N_004_TRACTORS_PURCHASED",
+            "children_ids": ["N_004_TRACTOR_AFFORDABILITY"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Customer Journey (Tractor Purchase)",
+            "mapped_fact_ids": ["F_004_06"]
+          },
+          {
+            "node_id": "N_004_TRACTOR_AFFORDABILITY",
+            "label": "Customer Journey (Affordability)",
+            "parent_id": "N_004_TRACTOR_DEMAND",
+            "children_ids": ["N_004_INCOME", "N_004_TRACTOR_PRICE", "N_004_INTEREST_RATES"],
+            "is_on_correct_path": true,
+            "node_status": "ACTIVE_BRANCH",
+            "formula_or_framework": "Affordability = Income vs. Loan Cost (Tractor Price + Interest Rates)",
+            "mapped_fact_ids": ["F_004_07"]
+          },
+          {
+            "node_id": "N_004_INCOME",
+            "label": "Income",
+            "parent_id": "N_004_TRACTOR_AFFORDABILITY",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_004_TRACTOR_PRICE",
+            "label": "Tractor Price",
+            "parent_id": "N_004_TRACTOR_AFFORDABILITY",
+            "children_ids": [],
+            "is_on_correct_path": false,
+            "node_status": "ELIMINATED_BRANCH",
+            "formula_or_framework": null,
+            "mapped_fact_ids": []
+          },
+          {
+            "node_id": "N_004_INTEREST_RATES",
+            "label": "Interest Rates (Hiked Due to Monsoon Loan Defaults)",
+            "parent_id": "N_004_TRACTOR_AFFORDABILITY",
+            "children_ids": [],
+            "is_on_correct_path": true,
+            "node_status": "ROOT_CAUSE",
+            "formula_or_framework": null,
+            "mapped_fact_ids": ["F_004_08"]
+          }
+        ]
+      },
+      "recommendations": [
+        {
+          "rec_id": "R_004_01",
+          "category": "Short-Term (Community & Group Incentives)",
+          "recommendation_text": "Collaborate with local agricultural cooperatives, associations, and farming communities to organize workshops on risk management and the importance of insurance, and offer discounted premiums for group enrollments.",
+          "target_node_id": "N_004_PCT_INSURANCE_PURCHASED"
+        },
+        {
+          "rec_id": "R_004_02",
+          "category": "Long-Term (OEM & Dealership Bundling)",
+          "recommendation_text": "Develop long-term partnerships with tractor manufacturers and dealerships to offer bundled insurance packages at the point of tractor purchase.",
+          "target_node_id": "N_004_TRACTORS_PURCHASED"
+        }
+      ],
+      "summary_takeaways": [
+        "This is a tough case because the problem doesn't lie within the industry in question, but an industry which is directly linked to it. Customer journey framework needs to be applied twice to deep dive into the problem.",
+        "These type of cases are generally longer, and it is essential that they are started well, with appropriate preliminary questions to understand the context well. The recommendations also encourage the interviewee to think out of the box, since very less information is available."
+      ],
+      "transcript": [
+        { "turn_id": 1, "speaker": "Interviewer", "text": "Your client is an insurance provider facing a decline in profits. Figure out why and suggest recommendations." },
+        { "turn_id": 2, "speaker": "Candidate", "text": "Just to ensure we are on the same page, our client is an insurance provider, who is facing a decline in profits. I need to find out the root cause and provide with recommendations" },
+        { "turn_id": 3, "speaker": "Interviewer", "text": "Yes, that's correct" },
+        { "turn_id": 4, "speaker": "Candidate", "text": "Before beginning my analysis, I want to clarify a few things. What kind of insurance does the client provide and since when have they been facing this issue?" },
+        { "turn_id": 5, "speaker": "Interviewer", "text": "Client deals with tractor insurance and is facing this issue for the past 1 year." },
+        { "turn_id": 6, "speaker": "Candidate", "text": "In which geography does the client operate?" },
+        { "turn_id": 7, "speaker": "Interviewer", "text": "The client operates Pan India." },
+        { "turn_id": 8, "speaker": "Candidate", "text": "Okay. Since they only deal with tractor insurance, can I assume that their customers are only people living in rural areas and involved in farming?" },
+        { "turn_id": 9, "speaker": "Interviewer", "text": "Yes, you can assume that." },
+        { "turn_id": 10, "speaker": "Candidate", "text": "Can you tell me more about the competitors of the client?" },
+        { "turn_id": 11, "speaker": "Interviewer", "text": "There are 4 more players in the industry, and all have equal market share." },
+        { "turn_id": 12, "speaker": "Candidate", "text": "Is this an industry wide issue or is it a client specific problem?" },
+        { "turn_id": 13, "speaker": "Interviewer", "text": "It is an industry wide issue." },
+        { "turn_id": 14, "speaker": "Candidate", "text": "How does the client operate? How do they reach out to the customers? Do they have their own offices with agents, or is there any other tie up?" },
+        { "turn_id": 15, "speaker": "Interviewer", "text": "The client does not follow an agent driven process. We have tie ups with local banks, the customers can approach any bank to avail the insurance and other facilities are available are there." },
+        { "turn_id": 16, "speaker": "Candidate", "text": "Okay. Now I would like to break down the profits as revenue minus costs. Have the costs increased, or revenues reduced or a combination of both?" },
+        { "turn_id": 17, "speaker": "Interviewer", "text": "The revenues have declined." },
+        { "turn_id": 18, "speaker": "Candidate", "text": "Can I assume that major revenue comes from the insurance premium that we collect from customers?" },
+        { "turn_id": 19, "speaker": "Interviewer", "text": "Yes, you can assume that." },
+        { "turn_id": 20, "speaker": "Candidate", "text": "The premium would be a function of the total number of customers, the premium per customer per instalment, and the frequency of paying instalments. Has there been a change recently in any of these?" },
+        { "turn_id": 21, "speaker": "Interviewer", "text": "Yes, the number of customers has gone down." },
+        { "turn_id": 22, "speaker": "Candidate", "text": "Okay. This means that less people are buying insurance for their tractors. This could be a supply issue or a demand issue? Do we lack capacity to sell the policies or has the demand reduced?" },
+        { "turn_id": 23, "speaker": "Interviewer", "text": "There is a reduction in demand." },
+        { "turn_id": 24, "speaker": "Candidate", "text": "Okay. To see why the demand has reduced, I would go through the journey of a customer, starting from the need till the post purchase experience. Does that sound suitable to you?" },
+        { "turn_id": 25, "speaker": "Interviewer", "text": "Yes, you can go ahead with this." },
+        { "turn_id": 26, "speaker": "Candidate", "text": "The process that I will consider will include need, awareness, availability, accessibility, affordability, purchase experience, and post purchase experience. Do we know if there is an issue with any of these factors?" },
+        { "turn_id": 27, "speaker": "Interviewer", "text": "Yes, the customer need has declined." },
+        { "turn_id": 28, "speaker": "Candidate", "text": "Okay, this means that the customer does not need insurance as they used to before, even though other factors have remained the same. Further, the number of insurance policies required for tractor would depend on the total number of tractors purchased and the percentage of them buying an insurance policy. So, are less people preferring an insurance policy, or has the number of people purchasing tractors gone down?" },
+        { "turn_id": 29, "speaker": "Interviewer", "text": "You are correct. The number of tractors purchased has reduced." },
+        { "turn_id": 30, "speaker": "Candidate", "text": "Is it a supply side issue or a demand side issue?" },
+        { "turn_id": 31, "speaker": "Interviewer", "text": "No there are no issues on the supply of tractors. You can look into the demand related factors for tractors" },
+        { "turn_id": 32, "speaker": "Candidate", "text": "Since the demand for tractors is declining, I will again consider the journey of a customer when the customer buys a tractor, starting from need till the post purchase behaviour. Do we know if there is an issue with any of the factors?" },
+        { "turn_id": 33, "speaker": "Interviewer", "text": "The affordability of the customers in particular has declined. Can you analyze what could be the reasons?" },
+        { "turn_id": 34, "speaker": "Candidate", "text": "Okay, I will look closely into the ways of buying a tractor, farmer would either use one's own finances or borrow money from someone, which can either be a local bank or local moneylenders. In this case, I think they would be borrowing money. Do we know the source of their funds?" },
+        { "turn_id": 35, "speaker": "Interviewer", "text": "They generally borrow from a local bank." },
+        { "turn_id": 36, "speaker": "Candidate", "text": "The affordability can decline due to a change in income or loan amount" },
+        { "turn_id": 37, "speaker": "Interviewer", "text": "The income is same whereas the loan has become costly." },
+        { "turn_id": 38, "speaker": "Candidate", "text": "The loan of a farmer would depend on the price of the tractor and the interest that the farmer must pay on the money borrowed. Has there recently been any change in any of these?" },
+        { "turn_id": 39, "speaker": "Interviewer", "text": "Yes. Last year a lot of farmers defaulted on their loans, due to which the local banks have increased the interest rates." },
+        { "turn_id": 40, "speaker": "Candidate", "text": "Do we have any information on why the farmers defaulted on their loans?" },
+        { "turn_id": 41, "speaker": "Interviewer", "text": "Yes, it was because of a bad monsoon during the year which affected the revenues of the farmers. Now that you have identified the root cause, can you suggest recommendations?" },
+        { "turn_id": 42, "speaker": "Candidate", "text": "Sure, in short term our client can collaborate with local agricultural cooperatives, associations, and farming communities to organize workshops or seminars focused on risk management and the importance of insurance. Our client can also offer incentives, such as discounted premiums for group enrollments, to encourage farmers to sign up for insurance coverage. In long term our client can develop long-term partnerships with tractor manufacturers and dealerships to offer bundled insurance packages at the point of tractor purchase" },
+        { "turn_id": 43, "speaker": "Interviewer", "text": "That would be all, thank you." }
+      ]
+    }
+  ]
+}

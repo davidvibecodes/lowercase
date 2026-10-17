@@ -52,7 +52,7 @@ Hosted mode (`src/lib/hosting.ts`) is on exactly when `PUBLIC_ORIGIN` (e.g. `htt
 - the server listens on `0.0.0.0` (or `HOST`), and `GET /healthz` answers before the Host guard;
 - session and sign-in cookies are `Secure` when the origin is https;
 - the test login is off whatever `AUTH_MODE` says (`devLoginEnabled`);
-- `ensure-db` never writes `.env`, seeds learning content only (`seedContent`: no people, no licensed Mumbai case), and keeps backups beside the database file;
+- `ensure-db` never writes `.env`, seeds learning content only (`seedContent`: no people, no licensed Mumbai case) and then imports the owner's bundled casebank `prisma/seed/casebank.json` once, before anyone has signed up (`seedBundledCasebank`), and keeps backups beside the database file;
 - `src/server/backup.ts` writes a daily `VACUUM INTO` copy, newest 7 kept.
 
 Test-only switches, never put in `.env`:
@@ -153,7 +153,7 @@ Status- and kind-like columns are plain SQLite strings. Their allowed values are
 - These are gitignored and must never be committed or force-added:
   - `.env*` (except `.env.example`);
   - `prisma/*.db*` and `prisma/backups/`;
-  - `content/private/`, where casebank JSON files are kept;
+  - `content/private/`, an optional place for other casebank JSON files. The owner's own casebank is the exception: `prisma/seed/casebank.json` is committed on purpose;
   - `UI/` and `*.docx`;
   - the `919322690407_s_whatsapp_net-*.jpg` reference images in the repo root, which are licensed casebook material.
 - `.dockerignore` keeps the same files out of the image. Real production settings (`deploy/vm/production.env`) are never committed; only the `.example` is.

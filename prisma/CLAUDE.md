@@ -63,13 +63,15 @@ Workflow:
 
 There is no down-migration. Rollback means restoring the backup.
 
-**Hosted** (`PUBLIC_ORIGIN` set): step 1 is skipped (settings come from the environment, and `.env` is never written), the backup goes to `backups/` beside the database file as `pre-migrate-<timestamp>.db`, and step 6 seeds `seedContent` (learning content only) when there are no concepts. The run stops first if `hostedConfigProblems()` reports anything.
+**Hosted** (`PUBLIC_ORIGIN` set): step 1 is skipped (settings come from the environment, and `.env` is never written), the backup goes to `backups/` beside the database file as `pre-migrate-<timestamp>.db`, and step 6 seeds `seedContent` (learning content only) when there are no concepts, then imports `prisma/seed/casebank.json` through the casebank importer while there is no imported case and no user yet. The run stops first if `hostedConfigProblems()` reports anything.
 
 ## Seed content (prisma/seed/)
 
 - `users.ts`: the owner (`davidsathyandevice`, the admin email), the friends `roy`, `mihaela` and `ankit` with activity history, 20 league bots (`first.last` usernames, `isLeagueBot: true`), and the study group name.
 - `concepts.ts`: concepts, explainer cards and questions.
 - `cases/`: `diagnostic-mumbai.ts` is **licensed casebook content**, which is why the repo is private. `additional.ts` holds the 7 practice cases written for this app. Cases share the `CaseSeed` shape from `src/lib/types.ts`.
+- `casebank.json`: the owner's own casebank (schema 2.0.0, 4 cases). It is **not** part of `seedDatabase`; `src/server/seed-casebank.ts` imports it through the casebank importer, and only a hosted first start does that. Locally, import it from Admin.
+- `casebank.json`: the owner's own casebank (schema 2.0.0, 4 cases). It is **not** part of `seedDatabase`; `src/server/seed-casebank.ts` imports it through the casebank importer, and only a hosted first start does that. Locally, import it from Admin.
 - `tree.ts`: the `n(label, correct, children)` shorthand and `flattenTree`, which turns a nested spec into keyed rows. Keys are path indexes: the root is `0`, its children `0.0`, `0.1`, and so on.
 - `../seed.ts`: the `prisma db seed` entry. It skips a non-empty DB. The logic itself is `seedDatabase` in `src/server/seed-runner.ts`, also used by tests.
 

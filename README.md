@@ -22,7 +22,7 @@ npm run start
 
 The server listens on loopback only (`127.0.0.1:3000`) and answers only to `localhost` and `127.0.0.1`, so the passwordless test login can't be reached from your network or from a page on another hostname.
 
-To put it online, see [docs/hosting.md](docs/hosting.md). Setting `PUBLIC_ORIGIN` switches on hosted mode: it pins to the public address, uses Secure cookies, turns the test login off and seeds learning content only. A `Dockerfile`, `railway.json` and `deploy/vm/` (Caddy + Docker Compose for a free VM) are included.
+To put it online, see [docs/hosting.md](docs/hosting.md). Setting `PUBLIC_ORIGIN` switches on hosted mode: it pins to the public address, uses Secure cookies, turns the test login off and seeds learning content plus the bundled casebank. A `Dockerfile`, `railway.json` and `deploy/vm/` (Caddy + Docker Compose for a free VM) are included.
 
 ## Google sign-in
 
@@ -86,4 +86,4 @@ On Windows, stop any running dev or E2E server before `npm run build`: `prisma g
 
 ## Content note and repository visibility
 
-**Keep this repository private.** The "Diagnostic Center – Mumbai" case and transcript come from the Consult Club, IIM Ahmedabad casebook ("not to be shared without permission"). They are seeded for local personal use only. A hosted deployment seeds only the cases written for this app and leaves the Mumbai case out, but its text is still in the source, so replace or license that content before making the repository or an image public. The other quiz questions and practice cases were written for this app and should get a human review for accuracy. Casebank JSON files you import through the CMS stay outside git. Keep them in the ignored `content/private/` folder or anywhere else on your machine.
+**Keep this repository private.** The "Diagnostic Center – Mumbai" case and transcript come from the Consult Club, IIM Ahmedabad casebook ("not to be shared without permission"). They are seeded for local personal use only. A hosted deployment seeds only the cases written for this app and leaves the Mumbai case out, but its text is still in the source, so replace or license that content before making the repository or an image public. The other quiz questions and practice cases were written for this app and should get a human review for accuracy. The owner's own casebank (4 cases, schema 2.0.0) is committed at `prisma/seed/casebank.json`, and a fresh hosted database imports it on first start. Other casebank JSON files you import through the CMS can stay outside git, for example in the ignored `content/private/` folder.

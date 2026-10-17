@@ -111,6 +111,7 @@ if (deployed.status !== 0) {
 }
 
 const { seedContent, seedDatabase } = await import("../src/server/seed-runner");
+const { seedBundledCasebank } = await import("../src/server/seed-casebank");
 try {
   await db.$queryRawUnsafe("PRAGMA journal_mode=WAL;");
   if (hosted) {
@@ -118,6 +119,15 @@ try {
     if ((await db.concept.count()) === 0) {
       await db.$transaction((tx) => seedContent(tx), { timeout: 120_000, maxWait: 10_000 });
       console.log("[ensure-db] seeded learning content");
+    }
+    // The bundled casebank comes in once, before anyone has signed up. After that the admin owns the cases,
+    // so a restart never re-imports (and never brings back one the admin deleted).
+    if ((await db.case.count({ where: { externalId: { not: null } } })) === 0 && (await db.user.count()) === 0) {
+      const result = await seedBundledCasebank(db);
+      if (!result.ok) throw new Error(`The bundled casebank was rejected by the importer: ${result.errors.join("; ")}`);
+      const failed = result.outcomes.filter((o) => o.status === "failed");
+      if (failed.length) throw new Error(`The bundled casebank failed for: ${failed.map((o) => `${o.title} (${o.reason})`).join(", ")}`);
+      console.log(`[ensure-db] imported ${result.outcomes.length} bundled casebank cases`);
     }
   } else if ((await db.user.count()) === 0) {
     // All-or-nothing: a half-seeded database would never be reseeded (the check above is on users).
