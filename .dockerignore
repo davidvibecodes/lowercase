@@ -13,7 +13,7 @@ test-results
 playwright-report
 blob-report
 *.tsbuildinfo
-# owner's local files and licensed reference material never go into an image
+# owner's local files and reference images never go into an image
 UI
 docs
 *.docx

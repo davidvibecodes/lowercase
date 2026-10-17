@@ -1,5 +1,5 @@
 import type { Prisma } from "@prisma/client";
-import { caseSeeds, publicCaseSeeds } from "../../prisma/seed/cases";
+import { caseSeeds } from "../../prisma/seed/cases";
 import { conceptSeeds } from "../../prisma/seed/concepts";
 import { friendSeeds, leagueBotSeeds, ownerSeed, STUDY_GROUP_NAME, type UserSeed } from "../../prisma/seed/users";
 import { addDays, dayKey } from "@/lib/dates";
@@ -157,13 +157,13 @@ export async function seedDatabase(db: Tx, now = new Date()) {
 }
 
 /**
- * Seed for a public site: the learning content only. No people (every account
- * there is a real sign-in), no friendships, and none of the licensed casebook
- * case. Run it inside a transaction, like seedDatabase.
+ * Seed for a public site: the learning content only (concepts and every case).
+ * No people (every account there is a real sign-in) and no friendships. Run it
+ * inside a transaction, like seedDatabase.
  */
 export async function seedContent(db: Tx) {
   for (const [i, c] of conceptSeeds.entries()) await createConcept(db, c, i);
-  for (const c of publicCaseSeeds) await createCase(db, c);
+  for (const c of caseSeeds) await createCase(db, c);
 }
 
 /** All seeded people (owner, friends, league members) by username. */

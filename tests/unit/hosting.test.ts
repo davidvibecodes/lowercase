@@ -4,7 +4,7 @@ import { devLoginEnabled } from "@/lib/auth/dev-provider";
 import { oauthCookieOptions } from "@/lib/auth/google";
 import { sessionCookieOptions } from "@/lib/auth/session-cookie";
 import { allowedHosts, allowedOrigins, isAllowedHost, isAllowedOrigin } from "@/server/loopback";
-import { caseSeeds, publicCaseSeeds } from "../../prisma/seed/cases";
+import { caseSeeds } from "../../prisma/seed/cases";
 import { dbFilePath, hostedBackupDir } from "@/server/db-file";
 import { seedContent } from "@/server/seed-runner";
 import { readBundledCasebank, seedBundledCasebank } from "@/server/seed-casebank";
@@ -119,9 +119,7 @@ describe("database file helpers", () => {
 });
 
 describe("the public seed", () => {
-  it("leaves out the licensed Mumbai case and every person", async () => {
-    expect(publicCaseSeeds.some((c) => c.title.includes("Mumbai"))).toBe(false);
-    expect(caseSeeds.length).toBe(publicCaseSeeds.length + 1);
+  it("has every case and no person", async () => {
     const tables = await db.$queryRawUnsafe<Array<{ name: string }>>(
       "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE '_prisma%' AND name NOT LIKE 'sqlite_%'",
     );
@@ -132,8 +130,8 @@ describe("the public seed", () => {
     expect(await db.user.count()).toBe(0);
     expect(await db.friendship.count()).toBe(0);
     const titles = (await db.case.findMany({ select: { title: true } })).map((c) => c.title);
-    expect(titles).toHaveLength(publicCaseSeeds.length);
-    expect(titles.some((t) => t.includes("Mumbai"))).toBe(false);
+    expect(titles).toHaveLength(caseSeeds.length);
+    expect(titles).toContain("Diagnostic Center – Mumbai");
     expect(await db.concept.count()).toBeGreaterThan(0);
   });
 

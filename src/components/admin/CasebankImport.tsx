@@ -73,7 +73,7 @@ export function CasebankImport() {
           Choose a casebank JSON file (schema 2.0.0). You&apos;ll see what changes before anything is saved. Importing the same file again updates those cases in place. Edits you made in the CMS to imported facts, hints, recommendations and
           lists are overwritten, and items you added to those lists are archived.
         </p>
-        <p className="mt-2 text-xs text-faint">The file is read in your browser and sent only to this app. Keep licensed casebanks out of git, e.g. in content/private/.</p>
+        <p className="mt-2 text-xs text-faint">The file is read in your browser and sent only to this app.</p>
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <input
             type="file"

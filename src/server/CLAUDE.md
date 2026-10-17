@@ -98,14 +98,14 @@ any open state --(close)--> CLOSED
 
 `seedDatabase(tx, now)` builds the full seed state:
 - concepts and questions;
-- the cases, including the licensed Mumbai case;
+- the cases, including the Mumbai case;
 - the owner and three friends (`roy`, `mihaela`, `ankit`) with history, all mutual friends;
 - 20 league bots named `first.last` (e.g. `priya.n`). A test username can collide with them.
 - one study group, "Case Club Squad".
 
 It is called inside one transaction by `scripts/ensure-db.ts` and `prisma/seed.ts`, and directly by the test helper `resetAndSeed()`. `resetUserProgress` backs Settings → Reset all my progress.
 
-`seedContent(tx)` is the **hosted** seed: concepts plus `publicCaseSeeds` only, with no users, friendships or groups, and without the licensed Mumbai case. `ensure-db` uses it when `PUBLIC_ORIGIN` is set, and only while there are no concepts. A hosted `resetUserProgress` never treats a user as a seeded person.
+`seedContent(tx)` is the **hosted** seed: concepts plus every case, with no users, friendships or groups. `ensure-db` uses it when `PUBLIC_ORIGIN` is set, and only while there are no concepts. A hosted `resetUserProgress` never treats a user as a seeded person.
 
 ## Backups (backup.ts, db-file.ts)
 
