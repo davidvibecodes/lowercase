@@ -22,7 +22,7 @@ React 19 client components, styled with Tailwind CSS v4 and animated with Framer
 - `getSocket()` returns the tab's single Socket.IO client: websocket transport, authenticated by the httpOnly cookie, auto-reconnecting.
 - Emit with `emitAck(event, payload)`. It always resolves, either with the server's ack or with `{ ok: false, error: "Connection lost. Try again." }` after 8 s, so busy states always clear.
 - Event names and payloads are typed in `events.ts`. Use them; don't cast.
-- A disconnected socket misses `social:changed`. The badge is re-seeded only by the next server render of `AppShell`.
+- A disconnected socket misses `social:changed`. `RealtimeBridge` re-syncs the Received badge when the socket reconnects, and `AppShell` re-seeds it on every server render.
 
 ## Patterns already in use
 
