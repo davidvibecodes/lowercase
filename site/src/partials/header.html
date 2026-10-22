@@ -1,0 +1,24 @@
+<header class="site-header">
+  <div class="wrap header-inner">
+    <a class="logo" href="/" aria-label="lowercase home">{{> logo}}</a>
+    <nav class="nav" aria-label="Main">
+      <a href="/methodology/"{{NAV_METHOD}}>Methodology</a>
+      <a href="/pricing/"{{NAV_PRICING}}>Pricing</a>
+      <a href="/blog/"{{NAV_BLOG}}>Blog</a>
+    </nav>
+    <div class="header-actions">
+      <a class="link-login" href="{{LOGIN}}">Log in</a>
+      <a class="btn btn-primary btn-sm" href="{{LOGIN}}">Get started</a>
+    </div>
+    <details class="menu">
+      <summary aria-label="Open menu"><span></span><span></span></summary>
+      <div class="menu-panel">
+        <a href="/methodology/">Methodology</a>
+        <a href="/pricing/">Pricing</a>
+        <a href="/blog/">Blog</a>
+        <a href="{{LOGIN}}">Log in</a>
+        <a class="btn btn-primary" href="{{LOGIN}}">Get started</a>
+      </div>
+    </details>
+  </div>
+</header>

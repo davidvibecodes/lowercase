@@ -2,6 +2,8 @@
 
 lowercase runs as **one Node process** (Next.js and Socket.IO on one port) with **SQLite on a disk**. It must stay a single running instance. Presence and invite timers live in memory, so don't scale it out. It needs a host that runs a long-lived container and gives it a persistent volume. Vercel and Netlify don't fit.
 
+The app lives on **`app.trylowercase.app`**. The bare `trylowercase.app` (and `www`) is the marketing website in `site/`, a static site hosted on Netlify (`site/README.md`). Its Log in buttons go to `https://app.trylowercase.app/login`.
+
 The same image runs everywhere (`Dockerfile`). Hosted mode switches on when `PUBLIC_ORIGIN` is set. Without it nothing changes: the app stays on loopback.
 
 ## What hosted mode changes
@@ -21,11 +23,11 @@ The server refuses to start in hosted mode until these are all set:
 
 | Variable | Value |
 |---|---|
-| `PUBLIC_ORIGIN` | `https://trylowercase.app` (an origin: no path, no trailing path) |
+| `PUBLIC_ORIGIN` | `https://app.trylowercase.app` (an origin: no path, no trailing path) |
 | `AUTH_SECRET` | a random string of 32 or more characters: `openssl rand -hex 32`. Changing it signs everyone out. |
 | `DATABASE_URL` | `file:/data/lowercase.db`, on the persistent volume |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | from your Google OAuth client |
-| `GOOGLE_REDIRECT_URI` | exactly `https://trylowercase.app/login/google/callback` |
+| `GOOGLE_REDIRECT_URI` | exactly `https://app.trylowercase.app/login/google/callback` |
 
 `PORT` is read as usual (Railway and Fly set it).
 
@@ -34,7 +36,7 @@ Admin works the same way as locally: only a Google sign-in as `davidsathyandevic
 ## 1. Google sign-in (do this first, any host)
 
 1. Google Cloud console → Google Auth Platform → create a project, then **Clients → Create client → Web application**.
-2. **Authorised redirect URI:** `https://trylowercase.app/login/google/callback`. Add `http://localhost:3000/login/google/callback` too if you still want local sign-in with the same client.
+2. **Authorised redirect URI:** `https://app.trylowercase.app/login/google/callback`. Add `http://localhost:3000/login/google/callback` too if you still want local sign-in with the same client.
 3. **Audience:** while the app is in *Testing*, only listed test users can sign in. Add yourself, or publish the app to let any Google account in. The app asks only for `openid email profile`, which Google treats as non-sensitive. Check Google's current rules before publishing.
 4. Copy the client id and secret into the host's environment (never into git).
 
@@ -43,12 +45,12 @@ Admin works the same way as locally: only a Google sign-in as `davidsathyandevic
 1. New project → **Deploy from GitHub repo** → pick `lowercase`, branch `feat/lowercase-app` (or merge to `main` first). Railway reads `railway.json` and builds the `Dockerfile`.
 2. Add a **Volume** to the service, mounted at `/data`.
 3. Set the variables from the table above.
-4. **Settings → Networking → Custom domain:** add `trylowercase.app`, then create the DNS record Railway shows. Railway issues the certificate.
+4. **Settings → Networking → Custom domain:** add `app.trylowercase.app`, then create the DNS record Railway shows. Railway issues the certificate.
 5. Keep the service at **one replica**.
 
 ## 2b. A free always-on VM (Oracle Cloud Always Free, or any Linux server)
 
-1. Create the VM (Ubuntu), open ports 80 and 443 in its firewall and in the cloud's network rules, and point `trylowercase.app` (A record) at its public IP. Add `www` too.
+1. Create the VM (Ubuntu), open ports 80 and 443 in its firewall and in the cloud's network rules, and point `app.trylowercase.app` (A record) at its public IP. The bare `trylowercase.app` and `www` belong to the website, not this VM.
 2. Install Docker, clone the repo, then:
 
    ```bash
@@ -61,7 +63,7 @@ Admin works the same way as locally: only a Google sign-in as `davidsathyandevic
 
 ## 3. After it is up
 
-- `https://trylowercase.app/healthz` should say `ok`. `/login` should show only "Continue with Google".
+- `https://app.trylowercase.app/healthz` should say `ok`. `/login` should show only "Continue with Google".
 - Sign in with `davidsathyandevice@gmail.com`, choose a username, and open Admin. Your 4 bundled casebank cases are already there; more can be added with Admin → Cases → Import.
 - Copy a backup off the machine now and then. The daily copies sit on the same disk, so they cover a bad migration or a mistake but not losing the disk. They are in `/data/backups/` (`lowercase-<timestamp>.db`). On the VM, `docker compose cp app:/data/backups ./backups` pulls them out. On Railway, use the volume's backup feature.
 

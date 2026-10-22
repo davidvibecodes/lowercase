@@ -11,7 +11,9 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "test": "vitest run",
-    "test:e2e": "npm run build && playwright test"
+    "test:e2e": "npm run build && playwright test",
+    "site:build": "node site/build.mjs",
+    "site:preview": "node site/build.mjs && node site/serve.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"

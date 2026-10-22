@@ -1,0 +1,404 @@
+<!--{
+  "title": "lowercase: learn case interviews by doing",
+  "description": "Case interview prep for MBA students and future consultants. Master the concepts, then practise real interview cases with a friend or an AI interviewer. Levels unlock as you improve."
+}-->
+<section class="hero">
+  <div class="wrap">
+    <div class="pills" role="tablist" aria-label="Ways to practise">
+      <button class="pill" role="tab" id="t-friends" aria-controls="p-friends" aria-selected="true"><span class="dot"></span>Practise with friends</button>
+      <button class="pill" role="tab" id="t-ai" aria-controls="p-ai" aria-selected="false" tabindex="-1"><span class="dot"></span>Practise with AI</button>
+    </div>
+    <h1>Learn case interviews <em>by doing</em></h1>
+    <p class="lede">lowercase teaches you the concepts, then puts you inside real interview cases until breaking down a problem feels natural. Harder cases unlock only once you've mastered the easier ones.</p>
+    <div class="hero-ctas">
+      <a class="btn btn-primary btn-lg" href="{{LOGIN}}">Start practising</a>
+      <a class="btn btn-ghost btn-lg" href="#how">See how it works</a>
+    </div>
+    <p class="hero-note">For MBA candidates and anyone working towards a consulting offer.</p>
+
+    <div class="card hero-card reveal" role="tabpanel" id="p-friends" aria-labelledby="t-friends">
+      <div class="hero-visual">
+        <div class="tree" aria-hidden="true">
+          <svg class="links" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <path class="lit" vector-effect="non-scaling-stroke" d="M50 14 C50 26 28 24 28 38"/>
+            <path vector-effect="non-scaling-stroke" d="M50 14 C50 26 72 24 72 38"/>
+            <path class="lit" vector-effect="non-scaling-stroke" d="M28 38 C28 50 14 50 14 62"/>
+            <path class="lit" vector-effect="non-scaling-stroke" d="M28 38 C28 50 42 50 42 62"/>
+            <path vector-effect="non-scaling-stroke" d="M72 38 C72 50 62 50 62 62"/>
+            <path vector-effect="non-scaling-stroke" d="M72 38 C72 50 86 50 86 62"/>
+          </svg>
+          <span class="node root" style="left:50%;top:14%">Profit down 20%</span>
+          <span class="node blue" style="left:28%;top:38%">Revenue</span>
+          <span class="node" style="left:72%;top:38%"><span class="lock">🔒</span>Cost</span>
+          <span class="node blue" style="left:14%;top:62%">Patients</span>
+          <span class="node blue" style="left:42%;top:62%">₹ / patient</span>
+          <span class="node" style="left:62%;top:62%">Fixed</span>
+          <span class="node" style="left:86%;top:62%">Variable</span>
+          <div class="float-card fact bob" style="left:4%;bottom:6%"><strong>Fact revealed</strong>Footfall is flat. Revenue per patient fell 18%.</div>
+          <div class="float-card bob d2" style="right:4%;bottom:6%">
+            <strong>Rubric · Structure</strong>4 of 5. Clean split, prioritised revenue first.
+            <div class="bar"><i style="width:80%"></i></div>
+          </div>
+        </div>
+      </div>
+      <div class="hero-copy">
+        <h2>Practise with a friend, scored like the real thing</h2>
+        <p>One of you interviews, one of you solves. The interviewer sees every fact, hint and the full issue tree. The candidate sees only what they've earned. Then you swap.</p>
+        <ul class="feature-list">
+          <li>{{> check}}Invite friends and start a case in seconds</li>
+          <li>{{> check}}Reveal facts and hints as the case unfolds</li>
+          <li>{{> check}}Score each other on a six-part rubric</li>
+          <li>{{> check}}Switch roles and run it back</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="card hero-card" role="tabpanel" id="p-ai" aria-labelledby="t-ai" hidden>
+      <div class="hero-visual">
+        <div class="tree" aria-hidden="true">
+          <svg class="links" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <path class="lit" vector-effect="non-scaling-stroke" d="M50 14 C50 26 28 24 28 38"/>
+            <path class="lit" vector-effect="non-scaling-stroke" d="M50 14 C50 26 72 24 72 38"/>
+            <path vector-effect="non-scaling-stroke" d="M28 38 C28 50 14 50 14 62"/>
+            <path vector-effect="non-scaling-stroke" d="M28 38 C28 50 42 50 42 62"/>
+          </svg>
+          <span class="node root" style="left:50%;top:14%">Enter the Pune market?</span>
+          <span class="node blue" style="left:28%;top:38%">Market attractive?</span>
+          <span class="node blue" style="left:72%;top:38%">Can we win?</span>
+          <span class="node" style="left:14%;top:62%"><span class="lock">🔒</span>Size</span>
+          <span class="node" style="left:42%;top:62%"><span class="lock">🔒</span>Growth</span>
+          <div class="float-card bob" style="left:4%;bottom:6%"><strong>AI interviewer</strong>Before we size it, what would make Pune worth entering at all?</div>
+          <div class="float-card hint bob d2" style="right:4%;bottom:6%"><strong>Hint, if you're stuck</strong>Think about who the premium gym customer is.</div>
+        </div>
+      </div>
+      <div class="hero-copy">
+        <h2>An AI interviewer that makes you think <span class="badge">Early access</span></h2>
+        <p>It won't hand you the answer or a framework to copy. It asks the next question, releases a fact only when you've earned it, and opens the issue tree as your structure holds up.</p>
+        <ul class="feature-list">
+          <li>{{> check}}Asks before it tells</li>
+          <li>{{> check}}Case facts unlock as you progress</li>
+          <li>{{> check}}An issue tree that grows with your thinking</li>
+          <li>{{> check}}Chat on Marathon, chat and voice on Journey</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-white" id="how">
+  <div class="wrap">
+    <h2 class="section-title reveal">Watch a case <em>unfold</em></h2>
+    <p class="section-sub reveal">Every case is played, not read. You lead, the facts follow, and the issue tree shows how far your structure has really got you.</p>
+
+    <div class="tabs-row reveal">
+      <div class="pills" role="tablist" aria-label="Demo">
+        <button class="pill" role="tab" id="t-demo-ai" aria-controls="p-demo-ai" aria-selected="true">With the AI interviewer</button>
+        <button class="pill" role="tab" id="t-demo-friend" aria-controls="p-demo-friend" aria-selected="false" tabindex="-1">With a friend</button>
+      </div>
+    </div>
+
+    <div class="demo-shell reveal">
+      <div class="browser" role="tabpanel" id="p-demo-ai" aria-labelledby="t-demo-ai" data-demo>
+        <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i><span class="addr">app.trylowercase.app/session</span></div>
+        <div class="progress" aria-hidden="true"><i></i></div>
+        <div class="session">
+          <div class="chat">
+            <div class="chat-head"><span>Diagnostic Center, Mumbai · Profitability</span><span class="badge badge-blue">Level 1</span></div>
+            <p class="msg them seq" style="--i:0"><span class="who">Interviewer</span>Our client's diagnostic centre has seen profits fall 20% in a year. Where would you start?</p>
+            <p class="msg you seq" style="--i:1"><span class="who">You</span>I'd split profit into revenue and cost, then check which one moved.</p>
+            <p class="msg them seq" style="--i:2"><span class="who">Interviewer</span>Good split. Which side would you test first, and what would you ask for?</p>
+            <p class="msg you seq" style="--i:3"><span class="who">You</span>Revenue. Has patient volume changed, or revenue per patient?</p>
+            <p class="msg fact seq" style="--i:4"><b>Fact unlocked</b>Footfall is flat. Revenue per patient fell 18%.</p>
+            <p class="msg them seq" style="--i:5"><span class="who">Interviewer</span>So what could pull revenue per patient down?</p>
+          </div>
+          <div class="session-tree">
+            <span class="side-label">Your issue tree</span>
+            <div class="tree" aria-hidden="true">
+              <svg class="links" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <path class="unlock" style="--i:1" vector-effect="non-scaling-stroke" d="M50 18 C50 30 28 28 28 42"/>
+                <path vector-effect="non-scaling-stroke" d="M50 18 C50 30 72 28 72 42"/>
+                <path class="unlock" style="--i:4" vector-effect="non-scaling-stroke" d="M28 42 C28 54 14 54 14 66"/>
+                <path class="unlock" style="--i:4" vector-effect="non-scaling-stroke" d="M28 42 C28 54 42 54 42 66"/>
+                <path vector-effect="non-scaling-stroke" d="M42 66 C42 76 28 76 28 86"/>
+                <path vector-effect="non-scaling-stroke" d="M42 66 C42 76 58 76 58 86"/>
+              </svg>
+              <span class="node root" style="left:50%;top:18%">Profit −20%</span>
+              <span class="node unlock" style="left:28%;top:42%;--i:1">Revenue</span>
+              <span class="node" style="left:72%;top:42%">Cost</span>
+              <span class="node unlock" style="left:14%;top:66%;--i:4">Patients</span>
+              <span class="node unlock" style="left:42%;top:66%;--i:4">₹ / patient</span>
+              <span class="node" style="left:28%;top:86%"><span class="lock">🔒</span>Tests</span>
+              <span class="node" style="left:58%;top:86%"><span class="lock">🔒</span>Price</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="browser" role="tabpanel" id="p-demo-friend" aria-labelledby="t-demo-friend" data-demo hidden>
+        <div class="browser-bar" aria-hidden="true"><i></i><i></i><i></i><span class="addr">app.trylowercase.app/session</span></div>
+        <div class="progress" aria-hidden="true"><i></i></div>
+        <div class="session">
+          <div class="chat">
+            <div class="chat-head"><span>You're interviewing Riya</span><span class="badge badge-green">Live</span></div>
+            <p class="msg you seq" style="--i:0"><span class="who">You, interviewing</span>A premium gym chain wants to open in Pune. Should they?</p>
+            <p class="msg them seq" style="--i:1"><span class="who">Riya</span>Two questions: is the market attractive, and can we win in it? I'd start with who the customer is.</p>
+            <p class="msg fact seq" style="--i:2"><b>You revealed a fact</b>Pune has about 40,000 households earning over ₹30 lakh a year.</p>
+            <p class="msg them seq" style="--i:3"><span class="who">Riya</span>If one in ten is a gym-goer, that's 4,000 potential members. Let me check the competition next.</p>
+            <p class="msg you seq" style="--i:4"><span class="who">You</span>Good. Wrap up whenever you're ready.</p>
+          </div>
+          <div class="session-tree">
+            <span class="side-label">Interviewer view</span>
+            <div style="display:grid;gap:14px;margin-top:34px">
+              <div class="interviewer-tools seq" style="--i:1">
+                <span class="tool-chip on">Fact 1 · revealed</span>
+                <span class="tool-chip">Fact 2</span>
+                <span class="tool-chip">Hint · unused</span>
+              </div>
+              <div class="rubric seq" style="--i:4">
+                <div class="rubric-row"><span>Structure &amp; MECE</span><span class="stars"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></div>
+                <div class="rubric-row"><span>Hypothesis-driven</span><span class="stars"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+                <div class="rubric-row"><span>Quantitative analysis</span><span class="stars"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></div>
+                <div class="rubric-row"><span>Business judgment</span><span class="stars"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+                <div class="rubric-row"><span>Communication</span><span class="stars"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></div>
+                <div class="rubric-row"><span>Recommendation</span><span class="stars"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></div>
+              </div>
+              <span class="btn btn-dark btn-sm seq" style="--i:5;justify-self:start">Switch roles ⇄</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="demo-foot">
+      <div>
+        <h3>Facts arrive when you ask for them</h3>
+        <p>That's how real case interviews work, and it's the habit that separates a structured candidate from a lucky one.</p>
+      </div>
+      <button class="replay" type="button" data-replay aria-label="Replay the demo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg></button>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="levels">
+  <div class="wrap">
+    <h2 class="section-title reveal">From first framework to <em>final round</em></h2>
+    <p class="section-sub reveal">Three levels, each with its own concepts and cases. You move up when your results say you're ready, not when the calendar does.</p>
+
+    <div class="tabs-row reveal">
+      <div class="pills" role="tablist" aria-label="Levels">
+        <button class="pill" role="tab" id="t-l1" aria-controls="p-l1" aria-selected="true">Level 1 · Foundations</button>
+        <button class="pill" role="tab" id="t-l2" aria-controls="p-l2" aria-selected="false" tabindex="-1">Level 2 · Applied</button>
+        <button class="pill" role="tab" id="t-l3" aria-controls="p-l3" aria-selected="false" tabindex="-1">Level 3 · Final round</button>
+      </div>
+    </div>
+
+    <div class="card levels-panel reveal" role="tabpanel" id="p-l1" aria-labelledby="t-l1">
+      <div class="levels-copy">
+        <h3>Build the toolkit</h3>
+        <p>Short, interactive lessons on the ideas every case relies on, followed by focused cases that use one or two of them at a time.</p>
+        <div class="topic-cols">
+          <h4>Concepts</h4>
+          <span>Profit = revenue − cost</span><span>Spotting the case type</span>
+          <span>3Cs and the 4Ps</span><span>Clarifying questions</span>
+          <span>Market sizing basics</span><span>Reading an exhibit fast</span>
+          <h4>Cases at this level</h4>
+          <span>Diagnostic Center, Mumbai</span><span>D2C Coffee Brand</span>
+          <span>Premium Gym Chain, Pune</span><span>Cloud Kitchen pricing</span>
+          <span>Bakery Chain acquisition</span><span>Delhi Metro Network</span>
+        </div>
+      </div>
+      <div class="levels-visual" aria-hidden="true">
+        <div class="ladder">
+          <div class="rung now"><span class="num">1</span>Foundations<span class="badge badge-blue">In progress</span></div>
+          <div class="rung locked"><span class="num">2</span>Applied<span>🔒</span></div>
+          <div class="rung locked"><span class="num">3</span>Final round<span>🔒</span></div>
+        </div>
+        <div class="meter"><i style="width:60%"></i></div>
+        <p class="gate-note">3 of 5 Level 1 checks passed. Two more to unlock Level 2.</p>
+      </div>
+    </div>
+
+    <div class="card levels-panel" role="tabpanel" id="p-l2" aria-labelledby="t-l2" hidden>
+      <div class="levels-copy">
+        <h3>Combine and prioritise</h3>
+        <p>Cases with more than one moving part. You learn to lead with a hypothesis, choose which branch matters most, and keep the maths honest.</p>
+        <div class="topic-cols">
+          <h4>Concepts</h4>
+          <span>Porter's five forces</span><span>VRIO</span>
+          <span>Hypothesis-led structures</span><span>Prioritising branches</span>
+          <span>Break-even and payback</span><span>Synthesising mid-case</span>
+          <h4>Cases at this level</h4>
+          <span>Regional Airline margins</span><span>EV Two-Wheeler, Indonesia</span>
+          <span>Five Star Hotel</span><span>Mixed review from Level 1</span>
+        </div>
+      </div>
+      <div class="levels-visual" aria-hidden="true">
+        <div class="ladder">
+          <div class="rung done"><span class="num">✓</span>Foundations<span class="badge badge-green">Mastered</span></div>
+          <div class="rung now"><span class="num">2</span>Applied<span class="badge badge-blue">In progress</span></div>
+          <div class="rung locked"><span class="num">3</span>Final round<span>🔒</span></div>
+        </div>
+        <div class="meter"><i style="width:35%"></i></div>
+        <p class="gate-note">Level 1 concepts keep coming back in review so they stay sharp.</p>
+      </div>
+    </div>
+
+    <div class="card levels-panel" role="tabpanel" id="p-l3" aria-labelledby="t-l3" hidden>
+      <div class="levels-copy">
+        <h3>Think like the partner</h3>
+        <p>Ambiguous prompts, several issues at once and pushback from the interviewer. This is where structure has to hold under pressure.</p>
+        <div class="topic-cols">
+          <h4>Concepts</h4>
+          <span>Framing ambiguous prompts</span><span>Multi-issue cases</span>
+          <span>Structured brainstorming</span><span>Second-order effects</span>
+          <span>Risks and next steps</span><span>Handling pushback</span>
+          <h4>Cases at this level</h4>
+          <span>Specialty Chemicals squeeze</span><span>Tractor Insurance Provider</span>
+          <span>Interleaved final-round sets</span>
+        </div>
+      </div>
+      <div class="levels-visual" aria-hidden="true">
+        <div class="ladder">
+          <div class="rung done"><span class="num">✓</span>Foundations<span class="badge badge-green">Mastered</span></div>
+          <div class="rung done"><span class="num">✓</span>Applied<span class="badge badge-green">Mastered</span></div>
+          <div class="rung now"><span class="num">3</span>Final round<span class="badge badge-blue">In progress</span></div>
+        </div>
+        <div class="meter"><i style="width:80%"></i></div>
+        <p class="gate-note">When you clear Level 3, you're ready. That's the point.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-white">
+  <div class="wrap">
+    <h2 class="section-title reveal">Built on how people <em>actually learn</em></h2>
+    <p class="section-sub reveal">Solving more cases isn't the same as getting better at cases. lowercase uses well-studied learning methods, the same ones behind the best adaptive tutors, and applies them to case interviews.</p>
+    <div class="grid-3">
+      <article class="card r-card reveal">
+        <div class="r-visual" aria-hidden="true">
+          <div class="mini">
+            <div class="mini-title">Concept checks</div>
+            <div class="mini-row"><span>Profit tree</span><span class="badge badge-green">Mastered</span></div>
+            <div class="mini-row"><span>Case type</span><span class="badge badge-green">Mastered</span></div>
+            <div class="mini-row"><span>3Cs and 4Ps</span><span class="badge badge-blue">Next up</span></div>
+            <div class="mini-row"><span>Five forces</span><span>🔒</span></div>
+          </div>
+        </div>
+        <div class="r-body">
+          <h3>Mastery before moving on</h3>
+          <p>Each concept ends with a short check. Pass it and the next one opens. Miss it and you get targeted practice, not the whole lesson again.</p>
+        </div>
+      </article>
+      <article class="card r-card reveal">
+        <div class="r-visual" aria-hidden="true">
+          <div class="mini">
+            <div class="mini-title">This week's review</div>
+            <div class="spark"><i style="height:30%"></i><i class="r" style="height:55%"></i><i style="height:42%"></i><i class="r" style="height:70%"></i><i style="height:60%"></i><i class="r" style="height:88%"></i></div>
+          </div>
+        </div>
+        <div class="r-body">
+          <h3>Review that's spaced and mixed</h3>
+          <p>Old concepts come back at growing intervals, mixed in with new ones. You learn to recognise which tool a case needs, not just how to use it.</p>
+        </div>
+      </article>
+      <article class="card r-card reveal">
+        <div class="r-visual" aria-hidden="true">
+          <div class="mini">
+            <div class="mini-title">After the case</div>
+            <div class="mini-row"><span>Structure</span><span class="stars"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></div>
+            <div class="mini-row"><span>Hypothesis</span><span class="stars"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></div>
+            <div class="mini-row"><span>Next rep</span><span class="badge">Hypotheses</span></div>
+          </div>
+        </div>
+        <div class="r-body">
+          <h3>Feedback while it still matters</h3>
+          <p>Hints when you're stuck, a rubric after every case and a transcript to look back on. You see which skill needs the next rep.</p>
+        </div>
+      </article>
+    </div>
+    <p class="center reveal" style="margin-top:32px"><a class="text-link" href="/methodology/">Read the full methodology →</a></p>
+  </div>
+</section>
+
+<section class="section" id="tracks">
+  <div class="wrap">
+    <h2 class="section-title reveal">Two ways to <em>practise</em></h2>
+    <p class="section-sub reveal">Use both. A friend gives you the pressure of a real person. The AI gives you a patient interviewer at midnight before your interview.</p>
+    <div class="tracks">
+      <article class="card track reveal">
+        <span class="track-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14.2a5 5 0 0 1 5.5 4.8"/></svg></span>
+        <h3>Practise with friends</h3>
+        <p>Add friends by username, see who's online, and send a case invite. The interviewer runs the case from a full console. The candidate works from what they've uncovered.</p>
+        <ul>
+          <li>{{> check}}<span>Facts, hints and the issue tree are in the interviewer's hands</span></li>
+          <li>{{> check}}<span>Score the candidate on structure, hypotheses, maths, judgment, communication and the recommendation</span></li>
+          <li>{{> check}}<span>Switch roles, because interviewing teaches you what good looks like</span></li>
+          <li>{{> check}}<span>Earn XP, keep your streak and climb the weekly league together</span></li>
+        </ul>
+        <p class="track-plans">Included in every plan.</p>
+      </article>
+      <article class="card track track-dark reveal">
+        <span class="track-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><rect x="7" y="7" width="10" height="10" rx="3"/><path d="M10.5 12h3"/></svg></span>
+        <h3>Practise with the AI interviewer <span class="badge">Early access</span></h3>
+        <p>Not a chatbot that explains the case to you. It behaves like a good interviewer: short prompts, probing follow-ups, and nothing you haven't asked for.</p>
+        <ul>
+          <li>{{> check}}<span>Gives case facts only when your question earns them</span></li>
+          <li>{{> check}}<span>Pushes you to structure first, then to prioritise</span></li>
+          <li>{{> check}}<span>The issue tree on screen opens up as you go</span></li>
+          <li>{{> check}}<span>Practise by chat, or speak out loud with the voice interviewer</span></li>
+        </ul>
+        <p class="track-plans">Chat on Marathon and Journey. Voice on Journey.</p>
+      </article>
+    </div>
+
+    <div class="proof-grid">
+      <article class="card proof reveal">
+        <div class="big">5</div>
+        <h3>case types from real interviews</h3>
+        <p>Every case is built from a real interview prompt, with its facts, hints and issue tree written out so it can be played rather than just read.</p>
+        <div class="chips"><span class="chip">Profitability</span><span class="chip">Revenue growth</span><span class="chip">Market entry</span><span class="chip">Pricing</span><span class="chip">M&amp;A</span></div>
+      </article>
+      <article class="card proof reveal">
+        <div class="big">6</div>
+        <h3>skills on every rubric</h3>
+        <p>Structure, hypotheses, quantitative analysis, business judgment, communication and the recommendation. Your feedback points to a skill, not a vibe.</p>
+      </article>
+      <article class="card proof reveal">
+        <div class="big">6 mo</div>
+        <h3>is our longest plan</h3>
+        <p>lowercase is built to get you ready and then get out of the way. If you still need us after six months, we haven't done our job.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section section-white">
+  <div class="wrap">
+    <h2 class="section-title reveal">Questions, <em>answered</em></h2>
+    <div class="faq">
+      <details>
+        <summary>How is this different from a casebook or a case library?</summary>
+        <p>A casebook gives you finished answers to read. lowercase makes you produce the thinking yourself: you learn a concept, prove you can use it, then lead a case where facts arrive only when you ask for them. Your progress decides what comes next.</p>
+      </details>
+      <details>
+        <summary>I've never done a case interview. Where do I start?</summary>
+        <p>At Level 1. The first lessons cover the profit equation, spotting the case type and asking good clarifying questions. You'll be running a simple case with a friend within your first session.</p>
+      </details>
+      <details>
+        <summary>Do I need a friend to use lowercase?</summary>
+        <p>No. Concept lessons and review work on your own, and the AI interviewer (on Marathon and Journey) gives you full cases without a partner. Practising with friends adds the pressure of a real person, so we recommend mixing both.</p>
+      </details>
+      <details>
+        <summary>Is the AI interviewer available today?</summary>
+        <p>It's in early access. Marathon members get the chat interviewer and Journey members get chat and voice as they roll out. Practising with friends and every concept lesson are available on all plans now.</p>
+      </details>
+      <details>
+        <summary>What happens when my plan ends?</summary>
+        <p>Nothing renews automatically. Plans are one-time passes, because the goal is for you to be ready, not to stay subscribed.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+{{> cta-band}}

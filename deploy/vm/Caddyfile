@@ -1,8 +1,6 @@
-www.trylowercase.app {
-	redir https://trylowercase.app{uri} permanent
-}
-
-trylowercase.app {
+# The app lives on app.trylowercase.app. The website (trylowercase.app and www)
+# is the static site in site/, hosted elsewhere, so this VM serves only the app.
+app.trylowercase.app {
 	encode zstd gzip
 	# Caddy forwards the Host header and upgrades WebSockets on its own.
 	reverse_proxy app:3000

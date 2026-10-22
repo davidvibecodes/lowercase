@@ -47,7 +47,7 @@ Playwright serves whatever is in `.next`. After a code change, run `npm run buil
 
 Google sign-in needs `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` and `GOOGLE_REDIRECT_URI`, added by hand. See `.env.example` and the README's "Google sign-in" section. Until they are set, the login page explains what is missing and the test login still works. Nobody can be admin then, because only a Google session can be.
 
-Hosted mode (`src/lib/hosting.ts`) is on exactly when `PUBLIC_ORIGIN` (e.g. `https://trylowercase.app`) is set, and it needs `AUTH_SECRET`, `DATABASE_URL`, the three `GOOGLE_*` values and a `GOOGLE_REDIRECT_URI` of `<origin>/login/google/callback`, or `server.ts` and `ensure-db` refuse to start (`hostedConfigProblems`). It changes these things, and only these:
+Hosted mode (`src/lib/hosting.ts`) is on exactly when `PUBLIC_ORIGIN` (e.g. `https://app.trylowercase.app`; the bare `trylowercase.app` is the marketing site in `site/`) is set, and it needs `AUTH_SECRET`, `DATABASE_URL`, the three `GOOGLE_*` values and a `GOOGLE_REDIRECT_URI` of `<origin>/login/google/callback`, or `server.ts` and `ensure-db` refuse to start (`hostedConfigProblems`). It changes these things, and only these:
 - the Host/Origin allowlist pins to the public address instead of loopback (`src/server/loopback.ts`);
 - the server listens on `0.0.0.0` (or `HOST`), and `GET /healthz` answers before the Host guard;
 - session and sign-in cookies are `Secure` when the origin is https;

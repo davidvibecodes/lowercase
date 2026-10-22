@@ -30,3 +30,9 @@ blob-report/
 # owner's local working files (never part of the app)
 UI/
 *.docx
+
+# marketing site build output
+site/dist/
+
+# Netlify CLI link state
+.netlify/
