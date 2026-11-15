@@ -11,13 +11,14 @@ Everything that touches the database or sockets.
 - **Signature.** `fn(db: Db, actorId, input)`. `Db` is the PrismaClient type, and the process-wide client is `db` from `@/lib/db`.
   - A few functions take a transaction client so they compose inside `$transaction`: `writeTree`, `seedDatabase`, `recordCaseSolved`.
   - Some take an injectable `now` or `rng` for deterministic tests.
-- **Untrusted input arrives as `unknown`.** Validate it with `parseInput(zodSchema, value)` (`invites.ts`) or a local `parse` helper. The zod schemas live in `src/lib/types.ts` or next to their feature.
-- **`ServiceError`** (`invites.ts`, re-exported by `sessions.ts`) carries a message meant for the user.
+- **Untrusted input arrives as `unknown`.** Validate it with `parseInput(zodSchema, value)` (`errors.ts`) or a local `parse` helper. The zod schemas live in `src/lib/types.ts` or next to their feature.
+- **`ServiceError`** (`errors.ts`, re-exported by `sessions.ts`) carries a message meant for the user.
   - Server-action wrappers show a `ServiceError`'s message, and turn any other error into "Something went wrong".
   - **Socket handlers show any `Error`'s message** (`errorMessage` in `realtime/types.ts`). Never put internals in an `Error` that a socket path can throw.
 - **Unique-index races.** Catch P2002 with `isUniqueViolation(e)` and re-read, rather than check-then-insert.
 - **Reading people.** Select `personSelect`, filter users with `onboarded` (`username: { not: null }`), and map through `toPerson()`, so `PersonRef.username` stays a string. League bots (`isLeagueBot`) are excluded from search, requests and Google linking.
-- `invites.ts` also hosts these shared helpers: `ServiceError`, `parseInput`, `isUniqueViolation`, `personSelect`, `onboarded`, `toPerson`, `areFriends`, `person`. Import them from there.
+- Shared helpers live in two small modules, not in `invites.ts` (which holds only the invite functions): `errors.ts` has `ServiceError`, `parseInput` and `isUniqueViolation`; `people.ts` has `personSelect`, `onboarded`, `toPerson`, `areFriends` and `person`.
+- `case-items.ts` has `itemColumns()`, the one mapper from an editor or imported item to its casebank columns. `applyCase` (`casebank.ts`) and `saveCaseItems` (`admin-cases.ts`) both use it.
 
 ## Friends and groups (services/social.ts, KTD8)
 

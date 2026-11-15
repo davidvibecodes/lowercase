@@ -2,7 +2,8 @@ import type { Db } from "@/lib/db";
 import type { PersonRef } from "@/lib/realtime/events";
 import { normalizeUsername } from "@/lib/username";
 import { getGroupStandings } from "./home";
-import { ServiceError, areFriends, isUniqueViolation, onboarded, personSelect, toPerson } from "./invites";
+import { ServiceError, isUniqueViolation } from "./errors";
+import { areFriends, onboarded, personSelect, toPerson } from "./people";
 
 /**
  * Friends & Groups (R17–R22, KTD8). Friendships and memberships change only

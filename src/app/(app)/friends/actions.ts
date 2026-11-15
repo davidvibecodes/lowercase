@@ -1,24 +1,18 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { createActionRunner } from "@/lib/action-result";
 import { requireUser } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import { announceNewFriends, notifySocialChanged } from "@/server/realtime/social";
-import { ServiceError } from "@/server/services/invites";
 import * as social from "@/server/services/social";
 
-type Result<T = object> = ({ ok: true } & T) | { ok: false; error: string };
+// The layout carries the Received badge; revalidating it covers /friends too.
+const runAction = createActionRunner(() => revalidatePath("/", "layout"));
 
-async function run<T extends object>(fn: (me: string) => Promise<T | void>): Promise<Result<T>> {
+async function run<T extends object>(fn: (me: string) => Promise<T | void>) {
   const user = await requireUser();
-  try {
-    const out = (await fn(user.id)) ?? ({} as T);
-    // The layout carries the Received badge; revalidating it covers /friends too.
-    revalidatePath("/", "layout");
-    return { ok: true, ...out };
-  } catch (e) {
-    return { ok: false, error: e instanceof ServiceError ? e.message : "Something went wrong" };
-  }
+  return runAction(() => fn(user.id));
 }
 
 export async function searchPeopleAction(query: string) {

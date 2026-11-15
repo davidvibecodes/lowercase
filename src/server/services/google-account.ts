@@ -1,7 +1,7 @@
 import type { User } from "@prisma/client";
 import type { Db } from "@/lib/db";
 import type { GoogleClaims, GoogleErrorCode } from "@/lib/auth/google";
-import { isUniqueViolation } from "./invites";
+import { isUniqueViolation } from "./errors";
 
 export type ResolveResult = { ok: true; user: User } | { ok: false; code: GoogleErrorCode };
 

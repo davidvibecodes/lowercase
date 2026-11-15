@@ -1,9 +1,9 @@
 import type { Prisma } from "@prisma/client";
 import type { Db } from "@/lib/db";
 import { planCasebank, type PlannedCase } from "@/lib/casebank";
-import { keysToJson } from "@/lib/node-keys";
 import type { CaseItemKind } from "@/lib/types";
 import { writeTree } from "@/server/seed-runner";
+import { itemColumns } from "./case-items";
 
 /**
  * Imports a 2.0.0 casebank (KTD12). Cases upsert on their casebank id; items
@@ -89,13 +89,8 @@ async function applyCase(db: Db, c: PlannedCase): Promise<void> {
             text: item.text,
             order,
             archivedAt: null,
-            category: item.category ?? null,
-            nodeKey: item.nodeKey ?? null,
             sourceTurn: item.sourceTurn ?? null,
-            gatePrereqKeys: keysToJson(item.gatePrereqKeys),
-            gateTrigger: item.gateTrigger ?? null,
-            gateAntiLeak: item.gateAntiLeak ?? null,
-            gateNudge: item.gateNudge ?? null,
+            ...itemColumns(item),
           };
           const match = current.find((x) => x.kind === kind && x.externalId === item.externalId);
           const saved = match

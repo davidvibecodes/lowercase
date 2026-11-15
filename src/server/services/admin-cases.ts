@@ -1,11 +1,12 @@
 import { z } from "zod";
 import type { CaseItem } from "@prisma/client";
 import type { Db } from "@/lib/db";
-import { itemNodeKeys, keysFromJson, keysToJson } from "@/lib/node-keys";
+import { itemNodeKeys, keysFromJson } from "@/lib/node-keys";
 import { validateTree } from "@/lib/rules/tree";
 import { caseInput, caseItemInput, CASE_ITEM_KINDS, transcriptTurnInput, treeNodeInput, type CaseItemKind } from "@/lib/types";
 import { writeTree } from "@/server/seed-runner";
-import { parseInput, ServiceError } from "./invites";
+import { itemColumns } from "./case-items";
+import { parseInput, ServiceError } from "./errors";
 
 export async function listCasesAdmin(db: Db) {
   return db.case.findMany({
@@ -96,14 +97,8 @@ export async function saveCaseItems(db: Db, caseId: string, kind: string, input:
   }
   const fields = (item: (typeof items)[number]) =>
     rich
-      ? {
-          category: item.category || null,
-          nodeKey: item.nodeKey || null,
-          gatePrereqKeys: rich === "fact" ? keysToJson(item.gatePrereqKeys) : null,
-          gateTrigger: rich === "fact" ? item.gateTrigger || null : null,
-          gateAntiLeak: rich === "fact" ? item.gateAntiLeak || null : null,
-          gateNudge: rich === "fact" ? item.gateNudge || null : null,
-        }
+      ? // Only facts carry a reveal gate; a recommendation keeps its category and node.
+        itemColumns(rich === "fact" ? item : { category: item.category, nodeKey: item.nodeKey })
       : {};
   const existing = await db.caseItem.findMany({ where: { caseId, kind, archivedAt: null } });
   const keep = new Set(items.filter((i) => i.id).map((i) => i.id!));

@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import { LogOut, Plus, Search, Trophy } from "lucide-react";
 import { joinGroupAction, leaveGroupAction, searchGroupsAction } from "@/app/(app)/friends/actions";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
-import { toast } from "@/components/ui/Toast";
+import { useToastAction } from "./useToastAction";
 import { cn } from "@/lib/cn";
 import type { PersonRef } from "@/lib/realtime/events";
 import type { Standing } from "@/lib/rules/league";
@@ -20,7 +20,7 @@ export function GroupsPanel({ userId, groups, friends }: { userId: string; group
   const [query, setQuery] = useState("");
   // Results remember the term they answer; while a newer term is in flight the last list stays, but "no match" waits.
   const [answer, setAnswer] = useState<{ term: string; groups: GroupResult[] } | null>(null);
-  const [busy, start] = useTransition();
+  const { busy, act } = useToastAction();
   const seq = useRef(0);
   const term = query.trim();
   const termRef = useRef(term);
@@ -48,13 +48,6 @@ export function GroupsPanel({ userId, groups, friends }: { userId: string; group
   const refreshSearch = async () => {
     if (termRef.current.length >= 2) await lookup(termRef.current);
   };
-
-  const act = (fn: () => Promise<{ ok: boolean; error?: string }>, ok: string, after?: () => Promise<void>) =>
-    start(async () => {
-      const r = await fn();
-      toast(r.ok ? ok : (r.error ?? "Something went wrong"), r.ok ? "success" : "warning");
-      await after?.();
-    });
 
   return (
     <div>

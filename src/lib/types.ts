@@ -80,16 +80,22 @@ export const treeNodeInput = z.object({
 });
 export type TreeNodeInput = z.input<typeof treeNodeInput>;
 
+/** A fact's reveal gate (casebank `reveal_gate`): the node keys it waits on, plus the interviewer-facing rules. */
+export const gateFields = z.object({
+  gatePrereqKeys: z.array(z.string().max(64)).max(20).nullable().optional(),
+  gateTrigger: z.string().trim().max(1000).nullable().optional(),
+  gateAntiLeak: z.string().trim().max(1000).nullable().optional(),
+  gateNudge: z.string().trim().max(1000).nullable().optional(),
+});
+export type GateFields = z.input<typeof gateFields>;
+
 /** One CMS list item. Facts and recommendations carry casebank fields; references are stable tree keys (KTD11). */
 export const caseItemInput = z.object({
   id: z.string().nullable(),
   text: z.string().trim().min(1, "Items can't be empty").max(2000),
   category: z.string().trim().max(80).nullable().optional(),
   nodeKey: z.string().trim().max(64).nullable().optional(),
-  gatePrereqKeys: z.array(z.string().max(64)).max(20).nullable().optional(),
-  gateTrigger: z.string().trim().max(1000).nullable().optional(),
-  gateAntiLeak: z.string().trim().max(1000).nullable().optional(),
-  gateNudge: z.string().trim().max(1000).nullable().optional(),
+  ...gateFields.shape,
 });
 export type CaseItemInput = z.input<typeof caseItemInput>;
 

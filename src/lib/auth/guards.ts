@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { cache } from "react";
 import { db } from "@/lib/db";
 import { allowedOrigins } from "@/server/loopback";
-import { ServiceError } from "@/server/services/invites";
+import { ServiceError } from "@/server/services/errors";
 import { devSessionAllowed } from "./dev-provider";
 import { toSessionUser, type SessionUser } from "./provider";
 import { SESSION_COOKIE, verifySessionValue } from "./session-cookie";

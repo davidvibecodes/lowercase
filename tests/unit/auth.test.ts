@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { devLoginProvider } from "@/lib/auth/dev-provider";
+import { devSignIn } from "@/lib/auth/dev-provider";
 import { toSessionUser } from "@/lib/auth/provider";
 import { createSessionValue, sessionValueFromCookieHeader, sign, verifySessionValue } from "@/lib/auth/session-cookie";
 import { peerTesterUrl } from "@/lib/peer-url";
@@ -76,26 +76,26 @@ describe("dev login provider", () => {
   });
 
   it("signs in a seeded test account, never as admin", async () => {
-    const r = await devLoginProvider.signIn({ username: "davidsathyandevice" });
+    const r = await devSignIn("davidsathyandevice");
     expect(r.ok && r.user.isAdmin).toBe(false);
-    expect((await devLoginProvider.signIn({ username: " Roy " })).ok).toBe(true);
+    expect((await devSignIn(" Roy ")).ok).toBe(true);
   });
 
   it("refuses accounts outside the seeded test list, such as a real friend who signed up with Google", async () => {
     await db.user.create({ data: { username: "realfriend", firstName: "Real", lastName: "Friend", email: "real@gmail.com", googleSub: "g-1" } });
-    expect(await devLoginProvider.signIn({ username: "realfriend" })).toEqual({ ok: false, error: "No such test user" });
-    expect(await devLoginProvider.signIn({ username: "aarav.m" })).toEqual({ ok: false, error: "No such test user" });
-    expect(await devLoginProvider.signIn({ username: "nobody" })).toEqual({ ok: false, error: "No such test user" });
+    expect(await devSignIn("realfriend")).toEqual({ ok: false, error: "No such test user" });
+    expect(await devSignIn("aarav.m")).toEqual({ ok: false, error: "No such test user" });
+    expect(await devSignIn("nobody")).toEqual({ ok: false, error: "No such test user" });
   });
 
   it("refuses a seeded account once it has signed in with Google", async () => {
     await db.user.update({ where: { username: "davidsathyandevice" }, data: { googleSub: "g-owner" } });
-    expect(await devLoginProvider.signIn({ username: "davidsathyandevice" })).toEqual({ ok: false, error: "This account signs in with Google" });
+    expect(await devSignIn("davidsathyandevice")).toEqual({ ok: false, error: "This account signs in with Google" });
   });
 
   it("is refused when AUTH_MODE is not dev", async () => {
     delete process.env.AUTH_MODE;
-    const r = await devLoginProvider.signIn({ username: "roy" });
+    const r = await devSignIn("roy");
     expect(r.ok).toBe(false);
   });
 });

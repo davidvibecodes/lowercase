@@ -1,24 +1,21 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { createActionRunner, type ActionResult } from "@/lib/action-result";
 import { assertAdmin } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import * as admin from "@/server/services/admin-cases";
-import { ServiceError } from "@/server/services/invites";
 
-export type CaseResult<T = object> = ({ ok: true } & T) | { ok: false; error: string };
+export type CaseResult<T = object> = ActionResult<T>;
 
-async function run<T extends object>(fn: () => Promise<T | void>): Promise<CaseResult<T>> {
-  try {
-    // Inside the try: a ServiceError("Not authorized") becomes { ok: false } (R13).
+const runAction = createActionRunner(() => revalidatePath("/admin/cases", "layout"));
+
+// Inside the runner's try: a ServiceError("Not authorized") becomes { ok: false } (R13).
+const run = <T extends object>(fn: () => Promise<T | void>) =>
+  runAction(async () => {
     await assertAdmin();
-    const out = (await fn()) ?? ({} as T);
-    revalidatePath("/admin/cases", "layout");
-    return { ok: true, ...out };
-  } catch (e) {
-    return { ok: false, error: e instanceof ServiceError ? e.message : "Something went wrong" };
-  }
-}
+    return fn();
+  });
 
 export const createCaseAction = async (input: unknown) => run(async () => ({ id: (await admin.createCase(db, input)).id }));
 export const updateCaseMetaAction = async (id: string, input: unknown) => run(() => admin.updateCaseMeta(db, id, input));

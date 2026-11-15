@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { isHosted } from "@/lib/hosting";
-import { toSessionUser, type AuthProvider } from "./provider";
+import { toSessionUser, type SessionUser } from "./provider";
 
 /** AUTH_MODE=dev, and never on a hosted (public) server, whatever the environment says. */
 export function devLoginEnabled(): boolean {
@@ -28,17 +28,14 @@ export function devSessionAllowed(user: { googleSub: string | null }): boolean {
 }
 
 /** Passwordless test login for seeded users. Refuses unless AUTH_MODE=dev; never admin. */
-export const devLoginProvider: AuthProvider = {
-  id: "dev",
-  async signIn({ username }) {
-    if (!devLoginEnabled()) return { ok: false, error: "Test login is disabled (AUTH_MODE is not dev)." };
-    const name = username.trim().toLowerCase();
-    if (!isDevLoginUsername(name)) return { ok: false, error: "No such test user" };
-    const user = await db.user.findUnique({ where: { username: name } });
-    if (!user || user.googleSub) return { ok: false, error: "This account signs in with Google" };
-    return { ok: true, user: toSessionUser(user, "dev") };
-  },
-};
+export async function devSignIn(username: string): Promise<{ ok: true; user: SessionUser } | { ok: false; error: string }> {
+  if (!devLoginEnabled()) return { ok: false, error: "Test login is disabled (AUTH_MODE is not dev)." };
+  const name = username.trim().toLowerCase();
+  if (!isDevLoginUsername(name)) return { ok: false, error: "No such test user" };
+  const user = await db.user.findUnique({ where: { username: name } });
+  if (!user || user.googleSub) return { ok: false, error: "This account signs in with Google" };
+  return { ok: true, user: toSessionUser(user, "dev") };
+}
 
 /** Seeded test accounts the dev login would admit right now (login page Testing section). */
 export async function availableDevLogins() {
@@ -52,5 +49,3 @@ export async function availableDevLogins() {
     return r ? [{ username: u as string, firstName: r.firstName, lastName: r.lastName }] : [];
   });
 }
-
-export const authProvider: AuthProvider = devLoginProvider;

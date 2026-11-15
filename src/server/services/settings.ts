@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { Db } from "@/lib/db";
 import { GATE_MODES, type GateMode } from "@/lib/types";
 import { resetUserProgress } from "@/server/seed-runner";
-import { parseInput, ServiceError } from "./invites";
+import { parseInput, ServiceError } from "./errors";
 
 /** Email comes from the Google account and isn't editable here (R5, KTD5); admin is derived from it. */
 export const accountInput = z.object({

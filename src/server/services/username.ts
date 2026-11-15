@@ -1,6 +1,6 @@
 import type { Db } from "@/lib/db";
 import { normalizeUsername, TAKEN, TAKEN_REASON } from "@/lib/username";
-import { isUniqueViolation } from "./invites";
+import { isUniqueViolation } from "./errors";
 
 export { TAKEN };
 
