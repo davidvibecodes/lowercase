@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import type { Ack } from "@/lib/realtime/events";
-import { person } from "@/server/services/invites";
+import { person } from "@/server/services/people";
 import * as sessions from "@/server/services/sessions";
 import { errorMessage, sessionRoom, userRoom, type IO, type IOSocket } from "./types";
 

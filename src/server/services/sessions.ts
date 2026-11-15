@@ -14,7 +14,8 @@ import { XP_INTERVIEWEE_SOLVE, XP_INTERVIEWER_SOLVE } from "@/lib/rules/xp";
 import type { CaseSummary, FactGuidance, HintView, SessionView } from "@/lib/realtime/events";
 import { isCaseType, isDifficulty, type CaseType, type Difficulty, type NodeStatus, type Role, type SessionStatus } from "@/lib/types";
 import { keysFromJson } from "@/lib/node-keys";
-import { personSelect, ServiceError, toPerson } from "./invites";
+import { ServiceError } from "./errors";
+import { personSelect, toPerson } from "./people";
 import { getGateResults, recordCaseSolved } from "./progress";
 
 export { ServiceError };

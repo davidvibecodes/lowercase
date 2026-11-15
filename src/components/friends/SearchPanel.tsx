@@ -1,19 +1,20 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Check, Copy, Search, UserPlus } from "lucide-react";
 import { cancelFriendRequestAction, respondFriendRequestAction, searchPeopleAction, sendFriendRequestAction } from "@/app/(app)/friends/actions";
 import { Avatar } from "@/components/home/Avatar";
 import { Button } from "@/components/ui/Button";
 import { toast } from "@/components/ui/Toast";
 import type { PersonResult } from "@/server/services/social";
+import { useToastAction } from "./useToastAction";
 
 /** Find people only by their exact username (R17); an empty search shows a prompt, never a list. */
 export function SearchPanel({ username }: { username: string }) {
   const [query, setQuery] = useState("");
   // Each answer remembers the term it answers, so an old answer never shows under a newer term.
   const [answer, setAnswer] = useState<{ term: string; result: PersonResult | null } | null>(null);
-  const [busy, start] = useTransition();
+  const { busy, act: toastAct } = useToastAction();
   const [copied, setCopied] = useState(false);
   const seq = useRef(0);
   const term = query.trim().replace(/^@/, "");
@@ -37,12 +38,9 @@ export function SearchPanel({ username }: { username: string }) {
     return () => window.clearTimeout(t);
   }, [term]);
 
+  // Refresh whatever is typed now, not the term at click time.
   const act = (fn: () => Promise<{ ok: boolean; error?: string }>, ok: string) =>
-    start(async () => {
-      const r = await fn();
-      if (!r.ok) toast(r.error ?? "Something went wrong", "warning");
-      else toast(ok, "success");
-      // Refresh whatever is typed now, not the term at click time.
+    toastAct(fn, ok, async () => {
       if (termRef.current) await lookup(termRef.current);
     });
 

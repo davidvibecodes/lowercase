@@ -1,24 +1,21 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { createActionRunner, type ActionResult } from "@/lib/action-result";
 import { assertAdmin } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
 import * as admin from "@/server/services/admin-content";
-import { ServiceError } from "@/server/services/invites";
 
-export type AdminResult<T = object> = ({ ok: true } & T) | { ok: false; error: string };
+export type AdminResult<T = object> = ActionResult<T>;
 
-async function run<T extends object>(fn: () => Promise<T | void>): Promise<AdminResult<T>> {
-  try {
-    // Inside the try: a ServiceError("Not authorized") becomes { ok: false } (R13).
+const runAction = createActionRunner(() => revalidatePath("/", "layout"));
+
+// Inside the runner's try: a ServiceError("Not authorized") becomes { ok: false } (R13).
+const run = <T extends object>(fn: () => Promise<T | void>) =>
+  runAction(async () => {
     await assertAdmin();
-    const out = (await fn()) ?? ({} as T);
-    revalidatePath("/", "layout");
-    return { ok: true, ...out };
-  } catch (e) {
-    return { ok: false, error: e instanceof ServiceError ? e.message : "Something went wrong" };
-  }
-}
+    return fn();
+  });
 
 export const createConceptAction = async (input: unknown) => run(async () => ({ id: (await admin.createConcept(db, input)).id }));
 export const updateConceptAction = async (id: string, input: unknown) => run(async () => void (await admin.updateConcept(db, id, input)));

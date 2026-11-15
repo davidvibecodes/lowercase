@@ -1,22 +1,20 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { createActionRunner, type ActionResult } from "@/lib/action-result";
 import { assertAdmin, requireUser } from "@/lib/auth/guards";
 import { db } from "@/lib/db";
-import { ServiceError } from "@/server/services/invites";
 import * as settings from "@/server/services/settings";
 
-export type SettingsResult = { ok: true } | { ok: false; error: string };
+export type SettingsResult = ActionResult;
 
-async function run(fn: () => Promise<unknown>): Promise<SettingsResult> {
-  try {
+const runAction = createActionRunner(() => revalidatePath("/", "layout"));
+
+// Settings actions only report success or failure: whatever the service returns is dropped.
+const run = (fn: () => Promise<unknown>) =>
+  runAction(async () => {
     await fn();
-    revalidatePath("/", "layout");
-    return { ok: true };
-  } catch (e) {
-    return { ok: false, error: e instanceof ServiceError ? e.message : "Something went wrong" };
-  }
-}
+  });
 
 export async function updateAccountAction(input: { firstName: string; lastName: string }) {
   const u = await requireUser();

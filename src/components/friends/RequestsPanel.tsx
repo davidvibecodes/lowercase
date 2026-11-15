@@ -1,6 +1,5 @@
 "use client";
 
-import { useTransition } from "react";
 import { Users } from "lucide-react";
 import {
   cancelFriendRequestAction,
@@ -10,7 +9,7 @@ import {
 } from "@/app/(app)/friends/actions";
 import { Avatar } from "@/components/home/Avatar";
 import { Button } from "@/components/ui/Button";
-import { toast } from "@/components/ui/Toast";
+import { useToastAction } from "./useToastAction";
 import type { PersonRef } from "@/lib/realtime/events";
 
 type FriendRequestRow = { id: string; person: PersonRef };
@@ -18,12 +17,7 @@ type GroupInviteRow = { id: string; group: { id: string; name: string }; person:
 
 /** Sent and Received friend requests and group invites (R19, R21). */
 export function RequestsPanel({ mode, friendRequests, groupInvites }: { mode: "sent" | "received"; friendRequests: FriendRequestRow[]; groupInvites: GroupInviteRow[] }) {
-  const [busy, start] = useTransition();
-  const act = (fn: () => Promise<{ ok: boolean; error?: string }>, ok: string) =>
-    start(async () => {
-      const r = await fn();
-      toast(r.ok ? ok : (r.error ?? "Something went wrong"), r.ok ? "success" : "warning");
-    });
+  const { busy, act } = useToastAction();
 
   const empty = mode === "sent" ? "Nothing waiting on anyone else." : "No requests or invites right now.";
 

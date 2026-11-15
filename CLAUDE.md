@@ -97,7 +97,7 @@ Server actions reach sockets only through `getIo()`. It returns `null` in proces
 
 - **The database is authoritative; sockets carry events.** A live-session action is a socket emit with an ack. The handler validates the actor in `src/server/services/sessions.ts`, writes, acks, then `broadcastSession` sends each connected participant **its own** `SessionView`. Per session the queue builds one snapshot at a time, so a stale one never lands last.
 - **Role projection is a security boundary.** The interviewee's view never contains unrevealed facts, unused hints, the tree, the transcript, recommendations, observations, casebook "given" facts, rubric data or any reveal-guidance field. Check `buildView` when adding anything to `SessionView`.
-- **Page mutations use server actions, which return results rather than throwing.** Each `actions.ts` has a local `run()` wrapper that returns `{ ok: true, ...data } | { ok: false, error }`. A `ServiceError` message is shown to the user; anything else becomes "Something went wrong".
+- **Page mutations use server actions, which return results rather than throwing.** Each `actions.ts` has a local `run()` built by `createActionRunner` (`src/lib/action-result.ts`) that returns `{ ok: true, ...data } | { ok: false, error }`. A `ServiceError` message is shown to the user; anything else becomes "Something went wrong".
 - **Socket handlers behave differently.** They return any `Error`'s message in the ack (`errorMessage` in `src/server/realtime/types.ts`), so a plain `throw new Error("…")` in a session service is user-visible text.
 - Friend and group changes emit `social:changed` (the Received badge count) and `presence:update` from the action layer, **after** the transaction commits. See `src/server/realtime/social.ts`.
 
@@ -117,7 +117,7 @@ These are product requirements, not style. No screen lists users the viewer hasn
 - Group search shows the owner's display name, never a handle.
 - A friend request is sent by username, never by user id, because league standings expose ids.
 
-Queries that return people use `personSelect` plus the `onboarded` filter and map through `toPerson()` (`src/server/services/invites.ts`).
+Queries that return people use `personSelect` plus the `onboarded` filter and map through `toPerson()` (`src/server/services/people.ts`).
 
 ### Content model
 

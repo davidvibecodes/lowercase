@@ -3,7 +3,7 @@ import type { Db } from "@/lib/db";
 import { gateMap } from "@/lib/rules/gates";
 import { leagueDaysLeft, leagueStandings, standingsWindow, type LeagueMember } from "@/lib/rules/league";
 import { CASE_TYPES, DIFFICULTIES } from "@/lib/types";
-import { onboarded, personSelect, toPerson } from "./invites";
+import { onboarded, personSelect, toPerson } from "./people";
 import { getGateResults, getUserProgress } from "./progress";
 
 async function weeklyXpByUser(db: Db, userIds: string[], now: Date) {

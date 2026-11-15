@@ -17,14 +17,3 @@ export function toSessionUser(u: User, method: AuthMethod): SessionUser {
     isAdmin: method === "google" && isAdminEmail(u.email),
   };
 }
-
-export type SignInResult = { ok: true; user: SessionUser } | { ok: false; error: string };
-
-/**
- * The swap-in seam for real authentication (R4). A future email/OAuth provider
- * implements this interface; cookies, guards and UI stay unchanged.
- */
-export interface AuthProvider {
-  readonly id: string;
-  signIn(credentials: { username: string }): Promise<SignInResult>;
-}

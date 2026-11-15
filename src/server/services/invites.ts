@@ -1,42 +1,7 @@
-import { Prisma } from "@prisma/client";
 import type { Db } from "@/lib/db";
-import type { PersonRef } from "@/lib/realtime/events";
-import type { z } from "zod";
 import { isCaseType, isDifficulty } from "@/lib/types";
-
-export class ServiceError extends Error {}
-
-/** A unique-index violation: the database decided a race (P2002). */
-export function isUniqueViolation(e: unknown): boolean {
-  return e instanceof Prisma.PrismaClientKnownRequestError && e.code === "P2002";
-}
-
-/** Validates input with a zod schema, surfacing the first issue as a ServiceError. */
-export function parseInput<T>(schema: z.ZodType<T>, v: unknown): T {
-  const r = schema.safeParse(v);
-  if (!r.success) throw new ServiceError(r.error.issues[0]?.message ?? "Invalid input");
-  return r.data;
-}
-
-export const personSelect = { id: true, firstName: true, lastName: true, username: true, avatarUrl: true } as const;
-
-/** Only people who finished onboarding are listed or found (KTD7). */
-export const onboarded = { username: { not: null } } as const;
-
-type PersonRow = { id: string; firstName: string; lastName: string; username: string | null; avatarUrl?: string | null };
-
-/**
- * Narrows a person row for display. Every person reachable from a session, an
- * invite or a list has a username: the guards and the socket handshake refuse
- * anyone who hasn't chosen one, and lists filter with `onboarded`.
- */
-export function toPerson(u: PersonRow): PersonRef {
-  return { id: u.id, firstName: u.firstName, lastName: u.lastName, username: u.username ?? "", avatarUrl: u.avatarUrl ?? null };
-}
-
-export async function areFriends(db: Db, a: string, b: string) {
-  return (await db.friendship.count({ where: { userId: a, friendId: b } })) > 0;
-}
+import { ServiceError } from "./errors";
+import { areFriends, personSelect, toPerson } from "./people";
 
 export type SendInviteInput = { toUserId: string; sessionId?: string; caseType?: string; difficulty?: number };
 
@@ -113,9 +78,4 @@ export async function expireInvite(db: Db, inviteId: string) {
   const changed = await db.sessionInvite.updateMany({ where: { id: inviteId, status: "PENDING" }, data: { status: "EXPIRED" } });
   if (changed.count === 0) return null;
   return db.sessionInvite.findUnique({ where: { id: inviteId } });
-}
-
-export async function person(db: Db, id: string): Promise<PersonRef | null> {
-  const u = await db.user.findUnique({ where: { id }, select: personSelect });
-  return u ? toPerson(u) : null;
 }

@@ -82,7 +82,7 @@ On Windows, stop any running dev or E2E server before `npm run build`: `prisma g
 - **Next.js 15 App Router** with a custom `server.ts` that also hosts **Socket.IO** on the same port (presence, invites, live sessions).
 - **Prisma 6 + SQLite** as the single source of truth. The binary query engine is used because the Node-API engine has no Windows ARM64 build.
 - The server sends each player a role-specific session snapshot. The interviewee never receives unrevealed facts, unused hints, the tree, the transcript or the rubric.
-- Auth sits behind an `AuthProvider` seam in `src/lib/auth/`. The dev provider only works with `AUTH_MODE=dev`, so email or OAuth can replace it without UI changes.
+- The test login (`devSignIn` in `src/lib/auth/dev-provider.ts`) only works with `AUTH_MODE=dev`; Google sign-in is the real path.
 
 ## Content note and repository visibility
 

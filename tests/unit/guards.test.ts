@@ -86,7 +86,7 @@ describe("admin pages and actions (R12, R13)", () => {
   it("assertAdmin throws a ServiceError the action wrappers can map", async () => {
     as(roy);
     await expect(guards.assertAdmin()).rejects.toMatchObject({ name: "Error", message: "Not authorized" });
-    const { ServiceError } = await import("@/server/services/invites");
+    const { ServiceError } = await import("@/server/services/errors");
     await expect(guards.assertAdmin()).rejects.toBeInstanceOf(ServiceError);
   });
 });

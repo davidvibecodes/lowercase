@@ -1,6 +1,6 @@
 import type { Db } from "@/lib/db";
 import { conceptInput, explainerInput, questionInput } from "@/lib/types";
-import { parseInput as parse, ServiceError } from "./invites";
+import { parseInput as parse, ServiceError } from "./errors";
 
 export async function listConceptsAdmin(db: Db) {
   return db.concept.findMany({ orderBy: { order: "asc" }, include: { _count: { select: { questions: true, explainers: true } } } });

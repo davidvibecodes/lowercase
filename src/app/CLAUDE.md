@@ -22,24 +22,21 @@ Next.js 15 App Router. Pages are async server components. They read data by call
 
 ## Server actions
 
-Each feature keeps its actions in a sibling `actions.ts` (`"use server"`), with a **local `run()` wrapper**:
+Each feature keeps its actions in a sibling `actions.ts` (`"use server"`), with a **local `run()` wrapper** built by the shared `createActionRunner(revalidate)` (`src/lib/action-result.ts`), which also defines `ActionResult<T>`. The runner catches errors and revalidates; each file adds its own auth call around it:
 
 ```ts
-async function run<T extends object>(fn: () => Promise<T | void>): Promise<Result<T>> {
-  try {
+const runAction = createActionRunner(() => revalidatePath("/admin/cases", "layout")); // whatever the change affects
+
+const run = <T extends object>(fn: () => Promise<T | void>) =>
+  runAction(async () => {
     await assertAdmin();                       // admin actions: inside the try (R13)
-    const out = (await fn()) ?? ({} as T);
-    revalidatePath("/admin/cases", "layout");  // whatever the change affects
-    return { ok: true, ...out };
-  } catch (e) {
-    return { ok: false, error: e instanceof ServiceError ? e.message : "Something went wrong" };
-  }
-}
+    return fn();
+  });
 ```
 
 - **Return a result; never throw to the client.** Callers branch on `ok` and toast `error`.
 - **Auth:**
-  - User actions call `requireUser()`. Most do it before `run()`; friends' `run()` calls it first.
+  - User actions call `requireUser()`. Most do it before `run()`; friends' `run()` calls it before the runner's try.
   - Admin actions call `assertAdmin()` inside the try, so a non-admin gets `{ ok: false, error: "Not authorized" }` and nothing is written.
   - Onboarding uses `requireSignedIn()`.
 - **Input is `unknown`.** Validate it in the service (zod), not in the action.

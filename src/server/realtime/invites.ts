@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
-import { acceptInvite, cancelInvite, declineInvite, expireInvite, person, sendInvite } from "@/server/services/invites";
+import { acceptInvite, cancelInvite, declineInvite, expireInvite, sendInvite } from "@/server/services/invites";
+import { person } from "@/server/services/people";
 import { isOnline } from "./presence";
 import { errorMessage, userRoom, type IO, type IOSocket } from "./types";
 
